@@ -1,32 +1,46 @@
-# ALETHEIA Native — *Being and Time* laboratory
+# ALETHEIA Native v0.5 — *Being and Time* philosophical laboratory
 
-An offline-first, **native Android Java** prototype for close study of Martin Heidegger's *Being and Time*.
+**Native Android Java app** built with Gradle and GitHub Actions. Offline-first, with no server-side collection of imported primary texts.
 
-## Install the debug APK
-
+## Installation
 1. Open [GitHub Actions](https://github.com/istudyphilosophy24-glitch/ALETHEIA-Android./actions).
-2. Choose **Build ALETHEIA Native APK**.
-3. Open the latest **successful** run.
-4. Under Artifacts, download **ALETHEIA-debug-APK** (ZIP) and extract `app-debug.apk`.
-5. Install the APK using Android's standard sideload prompt. Debug builds are for testing.
+2. Select the latest successful **Build ALETHEIA Native APK** run.
+3. Download the `ALETHEIA-debug-APK` artifact; extract `app-debug.apk` from the ZIP.
+4. Sideload the APK on Android 8 or later. This is a *debug* test build, not a production Play Store package.
 
-## Included at this development stage
+**Debug signing warning:** GitHub Actions builds may have different transient debug signatures. If Android refuses to update an earlier ALETHEIA APK, it may be necessary to uninstall the previous test build, **which erases that build's private local data**. Use the Scholar's Workspace > **Export my notebook** first if available. A production release needs persistent private signing credentials.
 
-- Great Reader: two separately labeled Macquarrie–Robinson and Stambaugh translation slots; on-device TXT/DRM-free EPUB import; paged reading, local paragraph annotations and approximate same-index comparison.
-- Scholarly architecture: 83 § navigation anchors; authored commentary and objections for selected sections; German-English glossary; research notes.
-- Visual ontology atlas; three interactive philosophical illustrations; three argument-reconstruction challenges; offline prompts.
-- Android TTS output selection, speed controls, speaking passages, system speech settings and Android share chooser.
+## Great Reader
+- Opens immediately to an offline original study guide for all 83 published sections, with distinct orientations and questions.
+- Imports legally acquired **searchable PDF**, **DRM-free EPUB**, or **UTF-8 TXT** from device storage or Google Drive's Android document provider.
+- Separate **Macquarrie–Robinson** and **Stambaugh** translation slots; independent paragraph paging, adjustable type, text selection/copy, bookmarking, offline notes and on-device search.
+- Comparative Translation Laboratory shows the two imported texts and permits independent paragraph-index adjustment; the text alignment is *not* verified.
+- Selected close-reading analyses and objections plus section-level study orientation for every section. Not every paragraph of the full copyrighted texts has been independently annotated.
+- Scanned PDF without searchable text will require separate text recognition; DRM-locked ebooks are not imported.
 
-## Boundaries and transparency
+**The complete English translations are not bundled.** Your personal lawful possession of a licensed edition does not by itself provide permission to redistribute the text through this public repository. Import your own copy through the Reader and it will be stored locally in the app.
 
-**No complete copyrighted translation is distributed with this source or APK.** Users must import lawfully obtained, DRM-free editions. Do not bypass ebook DRM. Imported EPUB chapters currently use filename order and may not follow EPUB spine order. Same-number paragraph comparison is provisional, not verified equivalence. Paragraph-by-paragraph commentary for every paragraph is not yet included. The Hermeneutic Tutor is a scripted offline study companion, not an integrated conversational AI.
+## Audio
+- Speech through Android's **TextToSpeech** engine, user-selectable installed engine, speed control and audio test, with a queued play request during engine initialization.
+- Separate ElevenReader **share/handoff** workflow and **Copy for ElevenReader > Write text** fallback.
+- A system settings selection does not guarantee ElevenReader can service Android TTS API calls. Its own import and narration capabilities are distinct from Android's TTS service. The app does not bypass subscriptions or usage limits.
 
-The previous `AletheiaNative-source.zip` was a separate prototype. This GitHub repository now contains newly authored Android sources directly; builds do not require the earlier archive.
+## Learning environments
+- 83 original thematic section navigation entries and unique section orientations.
+- 46 concept glossary entries.
+- Native Canvas ontological atlas, graphical equipment, anxiety and temporality demonstrations.
+- 12 varied argument reconstruction encounters, randomized display positions, native vector graphics and saved encounter progress.
+- Hermeneutic Tutor with offline structured questions, not a generative live AI.
+- Scholar's Workspace with local notes, section completion, annotation and **JSON export/restore** for notebook and progress.
 
-## Developers
+## Building
+Requires Java 17, Gradle 8.9 and Android SDK 35. The source is compiled by `.github/workflows/build-apk.yml` on every main-branch push. Build locally:
 
-JDK 17, Android SDK 35, Gradle 8.9, Android Gradle Plugin 8.7.3.
+```bash
+gradle :app:assembleDebug
+```
 
-Run `gradle :app:assembleDebug` at repository root. APK: `app/build/outputs/apk/debug/app-debug.apk`.
+Output: `app/build/outputs/apk/debug/app-debug.apk`.
 
-The app is an early prototype and its TTS compatibility, especially with ElevenReader, must be tested on your device.
+## Remaining limitations
+This is a substantial native beta, not a fully peer-reviewed edition. Full philological H-page alignment, paragraph-specific research commentary for every paragraph, conversational AI, more labs, comprehensive Android device testing, and durable release signing still need work. Imported text never leaves the application automatically; Android TTS engines and external ElevenReader sharing may transmit selected passages under those providers' terms.
