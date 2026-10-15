@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.xmlpull.v1.XmlPullParser;
+import android.util.Xml;
 
 /** Offline local files only. No included copyrighted translation content. */
 public final class BookStore {
@@ -45,13 +47,20 @@ public final class BookStore {
     }
   }
   private static String extractEpub(byte[] data) throws IOException {
-    Map<String,String> docs=new TreeMap<>();
+    // Respect EPUB package spine instead of filename sorting (which may scramble chapters).
+    Map<String,String> docs=new LinkedHashMap<>();
+    Map<String,String> packages=new HashMap<>();
+    String container=null;
     try(ZipInputStream zip=new ZipInputStream(new ByteArrayInputStream(data))){
       ZipEntry entry;int scanned=0;
       while((entry=zip.getNextEntry())!=null){
         if(++scanned>2500)throw new IOException("Too many EPUB archive entries.");
-        String name=entry.getName().toLowerCase(Locale.ROOT);
-        if(!entry.isDirectory()&&(name.endsWith(".xhtml")||name.endsWith(".html")||name.endsWith(".htm"))){
+        String name=entry.getName().replace('\\','/').toLowerCase(Locale.ROOT);
+        if(!entry.isDirectory()&&name.equals("meta-inf/container.xml")){
+          container=new String(readZipEntry(zip,128_000),StandardCharsets.UTF_8);
+        }else if(!entry.isDirectory()&&name.endsWith(".opf")){
+          packages.put(name,new String(readZipEntry(zip,650_000),StandardCharsets.UTF_8));
+        }else if(!entry.isDirectory()&&(name.endsWith(".xhtml")||name.endsWith(".html")||name.endsWith(".htm"))){
           byte[] b=readZipEntry(zip,900_000);
           String html=new String(b,StandardCharsets.UTF_8);
           String cleaned=Html.fromHtml(html,Html.FROM_HTML_MODE_LEGACY).toString();
@@ -62,10 +71,56 @@ public final class BookStore {
       }
     }
     if(docs.isEmpty())throw new IOException("No readable EPUB chapters found. DRM-protected books cannot be imported.");
-    // Filename order is a provisional fallback. Imported editions do NOT automatically
-    // align paragraphs or chapter numbering between translations.
+    List<String> order=new ArrayList<>();
+    try{
+      String packagePath=null;
+      if(container!=null){
+        XmlPullParser x=Xml.newPullParser();
+        x.setInput(new StringReader(container));
+        while(x.next()!=XmlPullParser.END_DOCUMENT){
+          if(x.getEventType()==XmlPullParser.START_TAG && x.getName().equalsIgnoreCase("rootfile")){
+            packagePath=x.getAttributeValue(null,"full-path");
+            if(packagePath!=null)break;
+          }
+        }
+      }
+      if(packagePath==null&&packages.size()==1)packagePath=packages.keySet().iterator().next();
+      if(packagePath!=null){
+        String normalized=packagePath.toLowerCase(Locale.ROOT);
+        String opf=packages.get(normalized);
+        if(opf!=null){
+          Map<String,String> items=new HashMap<>();
+          List<String> refs=new ArrayList<>();
+          XmlPullParser x=Xml.newPullParser();
+          x.setInput(new StringReader(opf));
+          while(x.next()!=XmlPullParser.END_DOCUMENT){
+            if(x.getEventType()!=XmlPullParser.START_TAG)continue;
+            String tag=x.getName();
+            if(tag.equalsIgnoreCase("item")){
+              String id=x.getAttributeValue(null,"id");
+              String href=x.getAttributeValue(null,"href");
+              if(id!=null&&href!=null)items.put(id,href);
+            }else if(tag.equalsIgnoreCase("itemref")){
+              String ref=x.getAttributeValue(null,"idref");
+              if(ref!=null)refs.add(ref);
+            }
+          }
+          String directory=normalized.contains("/")?normalized.substring(0,normalized.lastIndexOf('/')+1):"";
+          for(String ref:refs){
+            String href=items.get(ref);
+            if(href==null)continue;
+            href=href.split("#",2)[0].replace("%20"," ");
+            String file=new File(directory+href).toPath().normalize().toString().replace('\\','/').toLowerCase(Locale.ROOT);
+            if(docs.containsKey(file)&&!order.contains(file))order.add(file);
+          }
+        }
+      }
+    }catch(Exception ignored){
+      // Some EPUBs contain malformed metadata; preserve the ZIP entry order as a fallback.
+    }
+    for(String file:docs.keySet())if(!order.contains(file))order.add(file);
     StringBuilder b=new StringBuilder();
-    for(String chapter:docs.values()){b.append(chapter.trim()).append("\n\n");}
+    for(String file:order)b.append(docs.get(file).trim()).append("\n\n");
     return b.toString();
   }
   private static byte[] readZipEntry(InputStream in,int max) throws IOException{
