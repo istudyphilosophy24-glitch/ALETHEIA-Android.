@@ -21,8 +21,10 @@ public final class VoiceBridge {
   private String preferred=null;
   private float speed=.95f;
   private boolean leftForSettings=false;
+  private String deferredSpeech=null;
   public VoiceBridge(Activity a){context=a;}
   public void init(String engine){
+    deferredSpeech=null;
     generation++;
     final int gen=generation;
     TextToSpeech old=service;
@@ -35,14 +37,20 @@ public final class VoiceBridge {
       TextToSpeech.OnInitListener callback=result->context.runOnUiThread(()->{
         if(gen!=generation)return;
         if(result!=TextToSpeech.SUCCESS||service==null){
-          ready=false;status="Engine unavailable. Try Android default or the ElevenReader handoff.";
+          ready=false;status="Selected engine unavailable. Try system default or ElevenReader handoff.";
+          deferredSpeech=null;
+          Toast.makeText(context,status,Toast.LENGTH_LONG).show();
           return;
         }
         try{
           int language=service.setLanguage(Locale.ENGLISH);
           service.setSpeechRate(speed);
           ready=language!=TextToSpeech.LANG_MISSING_DATA&&language!=TextToSpeech.LANG_NOT_SUPPORTED;
-          status=ready?"Ready · "+service.getDefaultEngine():"English voice data missing for this engine";
+          status=ready?"Ready · "+(service.getDefaultEngine()==null?"selected engine":service.getDefaultEngine()):"English voice data missing for this engine";
+          if(ready&&deferredSpeech!=null){
+            String queued=deferredSpeech;deferredSpeech=null;
+            speak(queued);
+          }
           service.setOnUtteranceProgressListener(new UtteranceProgressListener(){
             @Override public void onStart(String id){}
             @Override public void onDone(String id){}
@@ -75,7 +83,12 @@ public final class VoiceBridge {
       return false;
     }
     if(!ready||service==null){
-      Toast.makeText(context,status,Toast.LENGTH_LONG).show();
+      if(service!=null&&status.startsWith("Speech engine initializing")){
+        deferredSpeech=text;
+        Toast.makeText(context,"Narration will begin when the speech engine is ready.",Toast.LENGTH_SHORT).show();
+        return true;
+      }
+      Toast.makeText(context,status+" Open Audio → Use system preferred TTS engine.",Toast.LENGTH_LONG).show();
       return false;
     }
     try{
@@ -107,7 +120,7 @@ public final class VoiceBridge {
       return false;
     }
   }
-  public void stop(){if(service!=null)service.stop();}
+  public void stop(){deferredSpeech=null;if(service!=null)service.stop();}
   public void settings(){
     leftForSettings=true;
     try{context.startActivity(new Intent("com.android.settings.TTS_SETTINGS"));}

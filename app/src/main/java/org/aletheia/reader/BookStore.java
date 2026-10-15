@@ -10,11 +10,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.xmlpull.v1.XmlPullParser;
 import android.util.Xml;
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.text.PDFTextStripper;
 
 /** Offline local files only. No included copyrighted translation content. */
 public final class BookStore {
   private final Context context;
-  public BookStore(Context context){this.context=context.getApplicationContext();}
+  public BookStore(Context context){this.context=context.getApplicationContext();PDFBoxResourceLoader.init(this.context);}
   private String fileName(int translation){return translation==0?"macquarrie_robinson.txt":"stambaugh.txt";}
   public boolean isAvailable(int translation){return context.getFileStreamPath(fileName(translation)).exists();}
   public void importDocument(Uri uri,int translation) throws IOException {
@@ -22,9 +25,11 @@ public final class BookStore {
     try(android.database.Cursor c=context.getContentResolver().query(uri,new String[]{android.provider.OpenableColumns.DISPLAY_NAME},null,null,null)){
       if(c!=null&&c.moveToFirst())name=c.getString(0);
     }catch(Exception ignored){}
-    byte[] bytes=readBounded(context.getContentResolver().openInputStream(uri),14*1024*1024);
+    byte[] bytes=readBounded(context.getContentResolver().openInputStream(uri),65*1024*1024);
     String text;
-    if(name.toLowerCase(Locale.ROOT).endsWith(".epub") || (bytes.length>3&&bytes[0]=='P'&&bytes[1]=='K')){
+    if(name.toLowerCase(Locale.ROOT).endsWith(".pdf") || isPdf(bytes)){
+      text=extractPdf(bytes);
+    }else if(name.toLowerCase(Locale.ROOT).endsWith(".epub") || (bytes.length>3&&bytes[0]=='P'&&bytes[1]=='K')){
       text=extractEpub(bytes);
     }else{
       text=new String(bytes,StandardCharsets.UTF_8);
@@ -45,6 +50,21 @@ public final class BookStore {
       }
       return out.toByteArray();
     }
+  }
+  private static boolean isPdf(byte[] data) {
+    return data.length>5&&data[0]=='%'&&data[1]=='P'&&data[2]=='D'&&data[3]=='F';
+  }
+  private static String extractPdf(byte[] data) throws IOException {
+    try(PDDocument document=PDDocument.load(data)){
+      if(document.isEncrypted())throw new IOException("This PDF is encrypted. Import a legally usable unlocked copy.");
+      if(document.getNumberOfPages()>1800)throw new IOException("PDF is too long for this version (1800-page limit).");
+      PDFTextStripper stripper=new PDFTextStripper();
+      stripper.setSortByPosition(true);
+      String result=stripper.getText(document);
+      if(result==null||result.trim().length()<150)
+        throw new IOException("This PDF appears scanned or image-only. It needs a searchable text layer (OCR) before import.");
+      return result.replaceAll("(?m)(?<!\\n)\\n(?!\\n)"," ").replaceAll("(?m)[ \\t]{2,}"," ").replaceAll("(?m)\\n{2,}","\\n\\n");
+    }catch(IOException e){throw e;}catch(Exception e){throw new IOException("Could not extract PDF text: "+e.getMessage(),e);}
   }
   private static String extractEpub(byte[] data) throws IOException {
     // Respect EPUB package spine instead of filename sorting (which may scramble chapters).
@@ -131,8 +151,12 @@ public final class BookStore {
   public List<String> paragraphs(int translation)throws IOException {
     File file=context.getFileStreamPath(fileName(translation));
     if(!file.exists())return Collections.emptyList();
-    String text=new String(readBounded(new FileInputStream(file),17*1024*1024),StandardCharsets.UTF_8);
+    String text=new String(readBounded(new FileInputStream(file),80*1024*1024),StandardCharsets.UTF_8);
     String[] blocks=text.trim().split("\\n\\s*\\n+");
+    // A scanned/text-extracted PDF can contain very long lines and little paragraph spacing.
+    if(blocks.length<8 && text.length()>10000){
+      blocks=text.trim().split("(?<=[.!?])\\s+(?=[A-Z][a-z])");
+    }
     ArrayList<String> out=new ArrayList<>();
     for(String block:blocks){
       String normalized=block.replaceAll("[ \\t]+"," ").trim();
