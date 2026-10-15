@@ -63,7 +63,7 @@ public final class BookStore {
       String result=stripper.getText(document);
       if(result==null||result.trim().length()<150)
         throw new IOException("This PDF appears scanned or image-only. It needs a searchable text layer (OCR) before import.");
-      return result.replaceAll("(?m)(?<!\\n)\\n(?!\\n)"," ").replaceAll("(?m)[ \\t]{2,}"," ").replaceAll("(?m)\\n{2,}","\\n\\n");
+      return result.replaceAll("(?m)(?<!\\n)\\n(?!\\n)"," ").replaceAll("(?m)[ \\t]{2,}"," ").replaceAll("(?m)\\n{2,}","\n\n");
     }catch(IOException e){throw e;}catch(Exception e){throw new IOException("Could not extract PDF text: "+e.getMessage(),e);}
   }
   private static String extractEpub(byte[] data) throws IOException {

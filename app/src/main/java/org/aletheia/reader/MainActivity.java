@@ -180,7 +180,7 @@ public class MainActivity extends Activity {
   }
   void seekSectionInBook(int number){
     if(paras.isEmpty()){open("Reader");return;}
-    java.util.regex.Pattern pattern=java.util.regex.Pattern.compile("(?iu)^\\\\s*(?:§\\\\s*|section\\\\s+)?"+number+"(?:[.\\\\s:—-]|$)");
+    java.util.regex.Pattern pattern=java.util.regex.Pattern.compile("(?iu)^\\s*(?:§\\s*|section\\s+)?"+number+"(?:[.\\s:—-]|$)");
     for(int i=0;i<paras.size();i++){
       String candidate=paras.get(i).trim();
       if(candidate.length()<350&&pattern.matcher(candidate).find()){
