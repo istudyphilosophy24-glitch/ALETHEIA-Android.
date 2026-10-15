@@ -3,44 +3,34 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+
 jobs:
-  build:
+  android:
+    name: Compile APK
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Checkout repository
+      - name: Checkout Android source
         uses: actions/checkout@v4
-      - name: Verify source archive
-        run: |
-          if [ ! -f "AletheiaNative-source.zip" ]; then
-            echo "::error::Upload AletheiaNative-source.zip to the repository root first."
-            exit 1
-          fi
-      - name: Extract native Android project
-        run: |
-          unzip -q AletheiaNative-source.zip
-          test -f AletheiaNative/settings.gradle
-          test -f AletheiaNative/app/src/main/AndroidManifest.xml
-      - name: Set up Java 17
+      - name: Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Configure Android SDK
+      - name: Android SDK
         uses: android-actions/setup-android@v3
-      - name: Install Android SDK packages
+      - name: Install Android platform
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Set up Gradle
+      - name: Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compile native APK
-        working-directory: AletheiaNative
+      - name: Compile debug APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
-      - name: Upload APK for sideloading
+      - name: Publish sideloadable debug APK
         uses: actions/upload-artifact@v4
         with:
           name: ALETHEIA-debug-APK
-          path: AletheiaNative/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
