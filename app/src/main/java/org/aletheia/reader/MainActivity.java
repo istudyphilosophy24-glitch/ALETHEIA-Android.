@@ -21,7 +21,8 @@ public class MainActivity extends Activity {
   private static final int IMPORT=1701;
   LinearLayout content;
   BookStore books;
-  TextToSpeech tts;
+  VoiceBridge voice;
+  boolean studyMode=true;
   List<String> paras=Collections.emptyList();
   int edition=0,importEdition=0,page=0,section=1,lab=0,arena=0;
   String current="Home";
@@ -50,7 +51,8 @@ public class MainActivity extends Activity {
   @Override public void onCreate(Bundle b){
     super.onCreate(b);getWindow().setStatusBarColor(INK);getWindow().setNavigationBarColor(PAPER);
     books=new BookStore(this);edition=pref().getInt("edition",0);section=pref().getInt("section",1);page=pref().getInt("page",0);
-    load();makeTts(pref().getString("ttsEngine",null));open("Home");
+    studyMode=pref().getBoolean("studyMode",true);
+    load();voice=new VoiceBridge(this);voice.init(pref().getString("ttsEngine",null));open("Home");
   }
   void open(String name){
     current=name;
@@ -68,7 +70,7 @@ public class MainActivity extends Activity {
     }tabs.addView(links);outer.addView(tabs);
     switch(name){
       case "Home":home();break;
-      case "Reader":reader();break;
+      case "Reader":try{reader();}catch(Exception error){title("Reader recovery");note("The Reader encountered an error: "+error.getMessage());button("Return to offline study guide",()->{studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");});}break;
       case "Audio":audio();break;
       default:LearningModules.render(this,name);
     }
@@ -76,7 +78,7 @@ public class MainActivity extends Activity {
   void home(){
     title("Being and Time");
     note("A native Android philosophical reading laboratory · offline-first");
-    card("THE GREAT READER","Two English-translation import slots, passage notes, audio and comparison.",()->open("Reader"));
+    card("THE GREAT READER","Now readable immediately: 83 original offline study orientations, curated interpretations, two translation import libraries, and narration.",()->open("Reader"));
     card("PHILOSOPHICAL LEXICON","German concepts, distinctions and etymological study prompts.",()->open("Glossary"));
     card("ONTOLOGICAL ATLAS","Interactive diagrams of Dasein, worldhood, care and temporality.",()->open("Atlas"));
     card("PHENOMENOLOGICAL LABORATORY","Visual experiments in equipment, anxiety and ecstatic time.",()->open("Lab"));
@@ -84,7 +86,7 @@ public class MainActivity extends Activity {
     card("SCHOLAR'S WORKSPACE","Your interpretive notebook and local learning records.",()->open("Notes"));
     note("Current focus: §"+section+" — "+Catalog.sectionTitle(section));
     button("Choose a section (§1–§83)",this::pickSection);
-    note("The Macquarrie–Robinson and Stambaugh complete texts are not bundled. Import DRM-free, lawfully obtained editions.");
+    note("The offline study guide is included. Macquarrie–Robinson and Stambaugh complete texts require separate lawful DRM-free imports.");
   }
   void load(){
     try{paras=books.paragraphs(edition);}catch(Exception e){paras=Collections.emptyList();}
@@ -92,35 +94,109 @@ public class MainActivity extends Activity {
   }
   String editionName(int n){return n==0?"Macquarrie–Robinson":"Stambaugh";}
   void selectEdition(int e){
-    edition=e;page=0;pref().edit().putInt("edition",e).apply();load();open("Reader");
+    edition=e;page=0;studyMode=false;pref().edit().putInt("edition",e).putBoolean("studyMode",false).putInt("page",0).apply();load();open("Reader");
   }
   void reader(){
-    title("The Great Reader");note("Complete offline text after importing each translation.");
-    button("Edition A · Macquarrie–Robinson "+(edition==0?"●":""),()->selectEdition(0));
-    button("Edition B · Stambaugh "+(edition==1?"●":""),()->selectEdition(1));
-    note("Selected: "+editionName(edition)+(books.isAvailable(edition)?" · imported":" · not imported"));
-    button("Import TXT or EPUB for this translation",()->{
-      importEdition=edition;Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
-      intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("*/*");
-      startActivityForResult(intent,IMPORT);
+    title("The Great Reader");
+    note("Offline reading, original scholarly orientations and two independent translation libraries.");
+    button((studyMode?"● ":"○ ")+"ORIGINAL STUDY GUIDE · available offline",()->{
+      studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");
     });
-    if(paras.isEmpty()){
-      card("No imported primary text","Select a DRM-free EPUB or UTF-8 TXT book file from your phone. The app stores it privately offline.",null);
-    }else{
-      int first=page*4,last=Math.min(paras.size(),first+4);
-      note("Imported paragraph "+(first+1)+" to "+last+" of "+paras.size());
-      for(int i=first;i<last;i++){
-        int idx=i;String passage=paras.get(idx);
-        card("PARAGRAPH "+(i+1),passage,()->passageActions(idx));
+    button((!studyMode&&edition==0?"● ":"○ ")+"Macquarrie–Robinson · "+(books.isAvailable(0)?"imported":"import required"),()->selectEdition(0));
+    button((!studyMode&&edition==1?"● ":"○ ")+"Stambaugh · "+(books.isAvailable(1)?"imported":"import required"),()->selectEdition(1));
+    if(studyMode){
+      note(StudyGuide.division(section));
+      title("§"+section+" · "+Catalog.sectionTitle(section));
+      card("PHILOSOPHICAL ORIENTATION",StudyGuide.orientation(section),null);
+      String[] curated=Catalog.COMMENTARY.get(section);
+      if(curated!=null){
+        card("CLOSE READING · "+curated[0],curated[1],null);
+        card("INTERPRETIVE DIFFICULTY",curated[2],null);
+      }else{
+        card("TEXTUAL COMMENTARY NOT YET AUTHORED",
+          "This section has an individual study orientation, but no verified paragraph-by-paragraph exegesis. Import a lawful translation and save your own notes while a detailed commentary is developed.",null);
       }
-      button("◀ Previous paragraphs",()->turn(-1));
-      button("Next paragraphs ▶",()->turn(1));
-      button("Compare this paragraph number across editions",()->compare(first));
-      button("Narrate displayed paragraphs",()->speak(pageText()));
+      card("ARGUMENT RECONSTRUCTION",StudyGuide.criticalExercise(section),null);
+      button("◀ Previous section",()->{section=Math.max(1,section-1);saveSection();open("Reader");});
+      button("Next section ▶",()->{section=Math.min(83,section+1);saveSection();open("Reader");});
+      button("Choose section (§1–§83)",this::pickSection);
+      button("Listen to the study commentary",()->voice.speak(studyAudio()));
+      button("Open this study text in ElevenReader",()->voice.handoffToElevenReader(studyAudio()));
+      button("Write my interpretation of §"+section,()->edit("s_"+section,"§"+section+" research note"));
+      button("Read my saved interpretation",()->readNote("s_"+section));
+      return;
     }
-    note("Section commentary is separately indexed using Heidegger's § numbers. Imported editions are NOT automatically paragraph-aligned.");
-    button("Open commentary: §"+section,this::commentary);
-    button("Choose a different section",this::pickSection);
+    note("PRIMARY EDITION · "+editionName(edition));
+    button("Import or replace DRM-free TXT / EPUB",()->importEditionFile(edition));
+    if(paras.isEmpty()){
+      card("Primary text not installed yet",
+        "Your "+editionName(edition)+" library is empty. Copyrighted translations cannot be bundled without permission. Import your own lawfully obtained DRM-free TXT or EPUB, or open the complete offline study index above.",null);
+      button("Choose a book file",()->importEditionFile(edition));
+      button("Return to usable offline study reader",()->{
+        studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");
+      });
+      return;
+    }
+    int first=Math.min(page*4,Math.max(0,paras.size()-1));
+    int last=Math.min(paras.size(),first+4);
+    note("Paragraph "+(first+1)+"–"+last+" / "+paras.size()+" · local file order");
+    note("Use section index separately: imported files are not automatically aligned with Heidegger's § numbers.");
+    for(int i=first;i<last;i++){
+      final int at=i;String passage=paras.get(i);
+      card("PARAGRAPH "+(i+1),passage,()->passageActions(at));
+      button("Analyze / annotate paragraph "+(i+1),()->paragraphAnalysis(at));
+    }
+    button("◀ Previous page",()->turn(-1));
+    button("Next page ▶",()->turn(1));
+    button("Listen to these paragraphs",()->voice.speak(pageText()));
+    button("Send current page to ElevenReader",()->voice.handoffToElevenReader(pageText()));
+    button("Compare passage indices (unverified)",()->compare(first));
+    button("Open §"+section+" commentary",this::commentary);
+    button("Select philosophical section",this::pickSection);
+  }
+  void saveSection(){pref().edit().putInt("section",section).apply();}
+  String studyAudio(){
+    StringBuilder b=new StringBuilder();
+    b.append("Section ").append(section).append(". ").append(Catalog.sectionTitle(section)).append(". ");
+    b.append(StudyGuide.orientation(section)).append(" ");
+    String[] c=Catalog.COMMENTARY.get(section);
+    if(c!=null)b.append(c[1]).append(" Critical question: ").append(c[2]);
+    else b.append(StudyGuide.criticalExercise(section));
+    return b.toString();
+  }
+  void importEditionFile(int chosen){
+    importEdition=chosen;
+    try{
+      Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+      i.addCategory(Intent.CATEGORY_OPENABLE);
+      i.setType("*/*");
+      i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"text/plain","application/epub+zip","application/octet-stream"});
+      startActivityForResult(i,IMPORT);
+    }catch(Exception error){
+      new AlertDialog.Builder(this).setTitle("Cannot open Android file picker")
+       .setMessage(error.getMessage()).setPositiveButton("Close",null).show();
+    }
+  }
+  void paragraphAnalysis(int index){
+    if(index<0||index>=paras.size())return;
+    String p=paras.get(index);
+    StringBuilder found=new StringBuilder();
+    String lower=p.toLowerCase(Locale.ROOT);
+    for(Map.Entry<String,String> entry:Catalog.LEXICON.entrySet()){
+      if(lower.contains(entry.getKey().toLowerCase(Locale.ROOT))){
+        if(found.length()>0)found.append("\n\n");
+        found.append(entry.getKey()).append(": ").append(entry.getValue());
+        if(found.length()>2500)break;
+      }
+    }
+    String msg="ORIGINAL PASSAGE · "+(index+1)+"\n\n"+p.substring(0,Math.min(p.length(),1300))+
+      "\n\nCONCEPTUAL CROSS-REFERENCES\n"+
+      (found.length()>0?found.toString():"No automatic German-term matches. Do not treat this as evidence that the passage lacks philosophical significance.")+
+      "\n\nThis terminology detection is not a paragraph-specific scholarly commentary. Use your note to reconstruct the claim, its textual evidence, and possible objections.";
+    new AlertDialog.Builder(this).setTitle("Paragraph study laboratory")
+      .setMessage(msg).setPositiveButton("Write commentary",(d,w)->edit("p_"+edition+"_"+index,"Analysis · paragraph "+(index+1)))
+      .setNeutralButton("Narrate",(d,w)->voice.speak(p))
+      .setNegativeButton("Close",null).show();
   }
   String pageText(){
     StringBuilder b=new StringBuilder();
@@ -133,24 +209,34 @@ public class MainActivity extends Activity {
   }
   @Override protected void onActivityResult(int code,int result,Intent data){
     super.onActivityResult(code,result,data);
-    if(code==IMPORT&&result==RESULT_OK&&data!=null&&data.getData()!=null){
+    if(code!=IMPORT||result!=RESULT_OK||data==null||data.getData()==null)return;
+    final android.net.Uri source=data.getData();
+    final int target=importEdition;
+    Toast.makeText(this,"Importing offline: please wait…",Toast.LENGTH_LONG).show();
+    new Thread(()->{
       try{
-        books.importDocument(data.getData(),importEdition);edition=importEdition;page=0;load();
-        Toast.makeText(this,"Stored offline",Toast.LENGTH_LONG).show();
+        books.importDocument(source,target);
+        runOnUiThread(()->{
+          edition=target;page=0;studyMode=false;
+          pref().edit().putInt("edition",edition).putInt("page",0).putBoolean("studyMode",false).apply();
+          load();open("Reader");
+          Toast.makeText(this,"Import complete. Your book is stored offline.",Toast.LENGTH_LONG).show();
+        });
       }catch(Exception e){
-        new AlertDialog.Builder(this).setTitle("Import failed").setMessage(e.getMessage()).setPositiveButton("Close",null).show();
+        runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Import unsuccessful")
+          .setMessage(e.getMessage()).setPositiveButton("Close",null).show());
       }
-      open("Reader");
-    }
+    },"AletheiaImport").start();
   }
   void passageActions(int index){
-    String[] choices={"Narrate paragraph","Save private annotation","Read annotation","Share with compatible external reader","Compare other translation"};
+    String[] choices={"Narrate paragraph","Analyze concepts in this paragraph","Save private annotation","Read annotation","Open in ElevenReader","Compare other translation"};
     new AlertDialog.Builder(this).setTitle("Paragraph "+(index+1)).setItems(choices,(d,i)->{
       if(i==0)speak(paras.get(index));
-      if(i==1)edit("p_"+edition+"_"+index,"Annotation · paragraph "+(index+1));
-      if(i==2)readNote("p_"+edition+"_"+index);
-      if(i==3)share(paras.get(index));
-      if(i==4)compare(index);
+      if(i==1)paragraphAnalysis(index);
+      if(i==2)edit("p_"+edition+"_"+index,"Annotation · paragraph "+(index+1));
+      if(i==3)readNote("p_"+edition+"_"+index);
+      if(i==4)voice.handoffToElevenReader(paras.get(index));
+      if(i==5)compare(index);
     }).show();
   }
   void compare(int index){
@@ -172,7 +258,7 @@ public class MainActivity extends Activity {
     String[] choices=new String[83];
     for(int i=1;i<=83;i++)choices[i-1]="§"+i+" · "+Catalog.sectionTitle(i);
     new AlertDialog.Builder(this).setTitle("Primary-work sections").setSingleChoiceItems(choices,section-1,(d,i)->{
-      section=i+1;pref().edit().putInt("section",section).apply();d.dismiss();commentary();
+      section=i+1;saveSection();d.dismiss();open("Reader");
     }).setNegativeButton("Cancel",null).show();
   }
   void commentary(){
@@ -194,56 +280,64 @@ public class MainActivity extends Activity {
     new AlertDialog.Builder(this).setTitle("Saved interpretation").setMessage(pref().getString("note_"+id,"No saved note."))
       .setPositiveButton("Close",null).show();
   }
-  void makeTts(String engine){
-    if(tts!=null){tts.stop();tts.shutdown();}
-    TextToSpeech.OnInitListener listener=status->{
-      if(status==TextToSpeech.SUCCESS&&tts!=null){
-        tts.setLanguage(Locale.UK);tts.setSpeechRate(pref().getFloat("speed",.95f));
-      }
-    };
-    tts=engine==null?new TextToSpeech(this,listener):new TextToSpeech(this,listener,engine);
-  }
-  void speak(String s){
-    if(s==null||s.trim().isEmpty()){Toast.makeText(this,"Import a passage first.",Toast.LENGTH_SHORT).show();return;}
-    if(tts!=null)tts.speak(s,TextToSpeech.QUEUE_FLUSH,null,"aletheia-passages");
-  }
-  void share(String s){
-    Intent i=new Intent(Intent.ACTION_SEND);i.setType("text/plain");i.putExtra(Intent.EXTRA_TEXT,s);
-    startActivity(Intent.createChooser(i,"Send text to a compatible reader"));
-  }
+  void speak(String text){voice.speak(text);}
+  void share(String text){voice.share(text);}
   void audio(){
     title("Audio Study Studio");
-    note("Select an Android TTS engine, including ElevenReader when its speech service is available to external applications.");
-    button("Open Android text-to-speech settings",()->{
-      try{startActivity(new Intent("com.android.settings.TTS_SETTINGS"));}
-      catch(Exception e){Toast.makeText(this,"Open Android Settings → Text-to-speech",Toast.LENGTH_LONG).show();}
+    card("ANDROID SPEECH ENGINE",voice.status(),"".isEmpty()?null:null);
+    note("Selected engine: "+voice.engine());
+    note("An external reader may not expose itself as a system Text-to-speech engine. Use the ElevenReader handoff separately when required.");
+    button("Refresh engine status",()->open("Audio"));
+    button("Choose a speech engine installed on Android",()->{
+      List<TextToSpeech.EngineInfo> options=voice.engines();
+      if(options==null||options.isEmpty()){
+        new AlertDialog.Builder(this).setTitle("No speech engines detected")
+          .setMessage("Open Android's Text-to-speech settings to install or select a compatible speech service.")
+          .setPositiveButton("Open settings",(d,w)->voice.settings()).setNegativeButton("Cancel",null).show();
+        return;
+      }
+      String[] labels=new String[options.size()];
+      for(int i=0;i<options.size();i++)labels[i]=options.get(i).label;
+      new AlertDialog.Builder(this).setTitle("Choose Android TTS service")
+        .setItems(labels,(d,i)->{
+          String engine=options.get(i).name;
+          pref().edit().putString("ttsEngine",engine).apply();
+          voice.init(engine);open("Audio");
+        }).show();
     });
-    button("Choose installed speech engine",()->{
-      if(tts==null)return;
-      List<TextToSpeech.EngineInfo> engines=tts.getEngines();
-      if(engines==null||engines.isEmpty())return;
-      String[] options=new String[engines.size()];
-      for(int i=0;i<engines.size();i++)options[i]=engines.get(i).label;
-      new AlertDialog.Builder(this).setTitle("Speech engines").setItems(options,(d,i)->{
-        String engine=engines.get(i).name;pref().edit().putString("ttsEngine",engine).apply();makeTts(engine);open("Audio");
-      }).show();
+    button("Use system preferred TTS engine",()->{
+      pref().edit().remove("ttsEngine").apply();voice.init(null);open("Audio");
     });
-    note("Selected engine: "+pref().getString("ttsEngine","Android default"));
+    button("Open Android Text-to-speech output settings",voice::settings);
     note("Speaking speed");
-    SeekBar speed=new SeekBar(this);speed.setMax(190);speed.setProgress((int)(pref().getFloat("speed",.95f)*100));content.addView(speed);
-    speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-      public void onProgressChanged(SeekBar s,int p,boolean user){
-        float rate=Math.max(.45f,p/100f);pref().edit().putFloat("speed",rate).apply();if(tts!=null)tts.setSpeechRate(rate);
+    SeekBar bar=new SeekBar(this);bar.setMax(140);
+    bar.setProgress(Math.max(0,Math.min(140,(int)(pref().getFloat("speed",.95f)*100)-55)));
+    content.addView(bar);
+    bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+      public void onProgressChanged(SeekBar s,int progress,boolean user){
+        float rate=(55f+progress)/100f;
+        if(user){pref().edit().putFloat("speed",rate).apply();voice.speed(rate);}
       }
       public void onStartTrackingTouch(SeekBar s){}
       public void onStopTrackingTouch(SeekBar s){}
     });
-    button("Test Android narration",()->speak("The question concerning the meaning of Being remains our guiding inquiry."));
-    button("Read current page",()->speak(pageText()));
-    button("Stop",()->{if(tts!=null)tts.stop();});
-    button("Open passage in external app",()->share(pageText()));
-    note("Android sharing does not guarantee ElevenReader accepts shared passages. Its ability to narrate in-app depends on how ElevenReader implements its Android speech integration.");
+    button("Test selected narrator",()->voice.speak(
+       "Being and Time. The question concerning the meaning of Being is the guiding inquiry."));
+    button("Listen to current Reader content",()->voice.speak(studyMode?studyAudio():pageText()));
+    button("Stop narration",voice::stop);
+    card("ELEVENREADER · EXTERNAL HANDOFF",
+      "Try sending text directly to ElevenReader. If it does not accept Android text sharing, the app opens ElevenReader and copies the passage for pasting.",null);
+    button("Open current text in ElevenReader",()->voice.handoffToElevenReader(studyMode?studyAudio():pageText()));
+    button("Show Android sharing choices",()->voice.share(studyMode?studyAudio():pageText()));
+  }
+  @Override protected void onResume(){
+    super.onResume();
+    if(voice!=null&&voice.returnedFromSettings()){
+      pref().edit().remove("ttsEngine").apply();
+      voice.init(null);
+      if("Audio".equals(current))open("Audio");
+    }
   }
   @Override public void onBackPressed(){if(current.equals("Home"))super.onBackPressed();else open("Home");}
-  @Override public void onDestroy(){if(tts!=null){tts.stop();tts.shutdown();}super.onDestroy();}
+  @Override public void onDestroy(){if(voice!=null)voice.destroy();super.onDestroy();}
 }
