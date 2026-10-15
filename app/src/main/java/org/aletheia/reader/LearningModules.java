@@ -172,6 +172,8 @@ final class LearningModules {
   private static void notes(MainActivity m){
     m.title("Scholar's Workspace");
     m.note("Your private interpretive and research notes are saved on the device.");
+    m.button("EXPORT MY NOTEBOOK + READING PROGRESS",m::exportNotebook);
+    m.button("RESTORE A PREVIOUS RESEARCH BACKUP",m::importNotebookBackup);
     m.button("Write a thesis, objection, or research question",()->m.edit("general","Your research notebook"));
     String general=m.pref().getString("note_general","");
     if(!general.isEmpty())m.card("General research notebook",general,()->m.edit("general","Research notes"));

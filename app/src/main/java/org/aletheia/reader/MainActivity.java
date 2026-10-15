@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
   static final int INK=Color.rgb(30,57,76), BLUE=Color.rgb(45,99,142);
   static final int MUTED=Color.rgb(92,112,125), PALE=Color.rgb(236,244,249);
   static final int PAPER=Color.rgb(250,249,247);
-  private static final int IMPORT=1701;
+  private static final int IMPORT=1701, EXPORT_NOTEBOOK=1702, IMPORT_NOTEBOOK=1703;
   LinearLayout content;
   BookStore books;
   VoiceBridge voice;
@@ -273,7 +273,10 @@ public class MainActivity extends Activity {
   }
   @Override protected void onActivityResult(int code,int result,Intent data){
     super.onActivityResult(code,result,data);
-    if(code!=IMPORT||result!=RESULT_OK||data==null||data.getData()==null)return;
+    if(result!=RESULT_OK||data==null||data.getData()==null)return;
+    if(code==EXPORT_NOTEBOOK){saveNotebookTo(data.getData());return;}
+    if(code==IMPORT_NOTEBOOK){restoreNotebookFrom(data.getData());return;}
+    if(code!=IMPORT)return;
     final android.net.Uri source=data.getData();
     final int target=importEdition;
     Toast.makeText(this,"Importing offline: please wait…",Toast.LENGTH_LONG).show();
@@ -449,6 +452,85 @@ public class MainActivity extends Activity {
     button("Write a comparative interpretation",()->edit("translation_lab","Translation comparison notes"));
     button("Review saved comparison",()->readNote("translation_lab"));
     note("The comparison is entirely offline. Automated passage equivalence, H-page alignment, and original German parallel reading remain editorially unverified.");
+  }
+  void exportNotebook(){
+    Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+    i.setType("application/json");i.addCategory(Intent.CATEGORY_OPENABLE);
+    i.putExtra(Intent.EXTRA_TITLE,"ALETHEIA-research-backup.json");
+    try{startActivityForResult(i,EXPORT_NOTEBOOK);}
+    catch(Exception e){Toast.makeText(this,"No Android document provider is available.",Toast.LENGTH_LONG).show();}
+  }
+  void importNotebookBackup(){
+    Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+    i.setType("application/json");i.addCategory(Intent.CATEGORY_OPENABLE);
+    try{startActivityForResult(i,IMPORT_NOTEBOOK);}
+    catch(Exception e){Toast.makeText(this,"Could not open notebook backup picker.",Toast.LENGTH_LONG).show();}
+  }
+  boolean isStudyKey(String key){
+    return key.startsWith("note_")||key.startsWith("done_section_")||
+      key.startsWith("bookmark_")||key.startsWith("arena_")||key.startsWith("compare_")||
+      key.equals("section")||key.equals("page")||key.equals("edition")||
+      key.equals("studyMode")||key.equals("readerFont");
+  }
+  void saveNotebookTo(Uri target){
+    try{
+      org.json.JSONObject data=new org.json.JSONObject();
+      data.put("format","ALETHEIA_RESEARCH_BACKUP_1");
+      org.json.JSONObject values=new org.json.JSONObject();
+      for(java.util.Map.Entry<String,?> e:pref().getAll().entrySet()){
+        if(isStudyKey(e.getKey())&&e.getValue()!=null)values.put(e.getKey(),e.getValue());
+      }
+      data.put("preferences",values);
+      byte[] bytes=data.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      try(java.io.OutputStream out=getContentResolver().openOutputStream(target)){
+        if(out==null)throw new java.io.IOException("Could not write document.");
+        out.write(bytes);
+      }
+      Toast.makeText(this,"Your research notes and progress were exported.",Toast.LENGTH_LONG).show();
+    }catch(Exception e){
+      new AlertDialog.Builder(this).setTitle("Notebook export failed").setMessage(e.getMessage())
+        .setPositiveButton("Close",null).show();
+    }
+  }
+  void restoreNotebookFrom(Uri uri){
+    try{
+      byte[] bytes;
+      try(java.io.InputStream in=getContentResolver().openInputStream(uri);
+          java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()){
+        if(in==null)throw new java.io.IOException("Could not open backup.");
+        byte[] buffer=new byte[8192];int n;
+        while((n=in.read(buffer))!=-1){
+          if(out.size()+n>2_000_000)throw new java.io.IOException("Backup is too large.");
+          out.write(buffer,0,n);
+        }
+        bytes=out.toByteArray();
+      }
+      org.json.JSONObject root=new org.json.JSONObject(new String(bytes,java.nio.charset.StandardCharsets.UTF_8));
+      if(!"ALETHEIA_RESEARCH_BACKUP_1".equals(root.optString("format")))
+        throw new java.io.IOException("This is not an ALETHEIA research backup.");
+      org.json.JSONObject values=root.getJSONObject("preferences");
+      android.content.SharedPreferences.Editor editor=pref().edit();
+      int count=0;
+      java.util.Iterator<String> it=values.keys();
+      while(it.hasNext()){
+        String key=it.next();
+        if(!isStudyKey(key))continue;
+        Object value=values.get(key);
+        if(value instanceof Boolean)editor.putBoolean(key,(Boolean)value);
+        else if(value instanceof Integer)editor.putInt(key,(Integer)value);
+        else if(value instanceof Long)editor.putLong(key,(Long)value);
+        else if(value instanceof Number)editor.putFloat(key,((Number)value).floatValue());
+        else if(value instanceof String)editor.putString(key,(String)value);
+        else continue;
+        count++;
+      }
+      editor.apply();
+      Toast.makeText(this,count+" research entries restored.",Toast.LENGTH_LONG).show();
+      open("Notes");
+    }catch(Exception e){
+      new AlertDialog.Builder(this).setTitle("Notebook import failed").setMessage(e.getMessage())
+        .setPositiveButton("Close",null).show();
+    }
   }
   void audio(){
     title("Audio Study Studio");
