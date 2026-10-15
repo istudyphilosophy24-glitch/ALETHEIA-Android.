@@ -85,6 +85,9 @@ public class MainActivity extends Activity {
     card("DIALECTICAL ARENA","Reconstruct philosophical arguments rather than guessing answers.",()->open("Arena"));
     card("SCHOLAR'S WORKSPACE","Your interpretive notebook and local learning records.",()->open("Notes"));
     note("Current focus: §"+section+" — "+Catalog.sectionTitle(section));
+    int studied=0;for(int i=1;i<=83;i++)if(pref().getBoolean("done_section_"+i,false))studied++;
+    card("YOUR PHILOSOPHICAL PROGRESS",studied+" of 83 sections studied · "+
+      (int)(100f*studied/83)+"% · Offline material remains available without importing a book.",null);
     button("Choose a section (§1–§83)",this::pickSection);
     note("The offline study guide is included. Macquarrie–Robinson and Stambaugh complete texts require separate lawful DRM-free imports.");
   }
@@ -124,6 +127,10 @@ public class MainActivity extends Activity {
       button("Open this study text in ElevenReader",()->voice.handoffToElevenReader(studyAudio()));
       button("Write my interpretation of §"+section,()->edit("s_"+section,"§"+section+" research note"));
       button("Read my saved interpretation",()->readNote("s_"+section));
+      button(pref().getBoolean("done_section_"+section,false)?"✓ Section studied · tap to reset":"Mark this section studied",()->{
+        boolean old=pref().getBoolean("done_section_"+section,false);
+        pref().edit().putBoolean("done_section_"+section,!old).apply();open("Reader");
+      });
       return;
     }
     note("PRIMARY EDITION · "+editionName(edition));
@@ -143,13 +150,17 @@ public class MainActivity extends Activity {
     note("Use section index separately: imported files are not automatically aligned with Heidegger's § numbers.");
     for(int i=first;i<last;i++){
       final int at=i;String passage=paras.get(i);
-      card("PARAGRAPH "+(i+1),passage,()->passageActions(at));
+      String badge=pref().getBoolean("bookmark_"+edition+"_"+i,false)?"★  ":"";
+      card(badge+"PARAGRAPH "+(i+1),passage,()->passageActions(at));
       button("Analyze / annotate paragraph "+(i+1),()->paragraphAnalysis(at));
     }
     button("◀ Previous page",()->turn(-1));
     button("Next page ▶",()->turn(1));
     button("Listen to these paragraphs",()->voice.speak(pageText()));
     button("Send current page to ElevenReader",()->voice.handoffToElevenReader(pageText()));
+    button("Search the imported book",this::searchImportedText);
+    button("Bookmark / unbookmark displayed page",()->toggleBookmark(first));
+    button("Browse bookmarked passages",this::showBookmarks);
     button("Compare passage indices (unverified)",()->compare(first));
     button("Open §"+section+" commentary",this::commentary);
     button("Select philosophical section",this::pickSection);
@@ -228,15 +239,77 @@ public class MainActivity extends Activity {
       }
     },"AletheiaImport").start();
   }
+  void toggleBookmark(int index){
+    String key="bookmark_"+edition+"_"+index;
+    boolean next=!pref().getBoolean(key,false);
+    pref().edit().putBoolean(key,next).apply();
+    Toast.makeText(this,next?"Paragraph bookmarked offline":"Bookmark removed",Toast.LENGTH_SHORT).show();
+    if("Reader".equals(current))open("Reader");
+  }
+  void showBookmarks(){
+    if(paras.isEmpty()){Toast.makeText(this,"Import an edition to bookmark its paragraphs.",Toast.LENGTH_LONG).show();return;}
+    ArrayList<Integer> indices=new ArrayList<>();
+    ArrayList<String> labels=new ArrayList<>();
+    for(int i=0;i<paras.size();i++){
+      if(pref().getBoolean("bookmark_"+edition+"_"+i,false)){
+        indices.add(i);
+        String excerpt=paras.get(i);
+        labels.add("¶"+(i+1)+" · "+excerpt.substring(0,Math.min(excerpt.length(),85)));
+      }
+    }
+    if(indices.isEmpty()){Toast.makeText(this,"No bookmarks in this translation yet.",Toast.LENGTH_LONG).show();return;}
+    new AlertDialog.Builder(this).setTitle("Saved bookmarks · "+editionName(edition))
+      .setItems(labels.toArray(new String[0]),(d,which)->{
+        page=indices.get(which)/4;pref().edit().putInt("page",page).apply();open("Reader");
+      }).setNegativeButton("Close",null).show();
+  }
+  void searchImportedText(){
+    if(paras.isEmpty()){Toast.makeText(this,"Import a book to search primary text.",Toast.LENGTH_LONG).show();return;}
+    EditText input=new EditText(this);
+    input.setSingleLine(true);input.setHint("Find a word or phrase");
+    LinearLayout wrap=new LinearLayout(this);wrap.setPadding(dp(18),0,dp(18),0);wrap.addView(input);
+    new AlertDialog.Builder(this).setTitle("Search · "+editionName(edition))
+      .setView(wrap).setPositiveButton("Find",(d,w)->{
+        String needle=input.getText().toString().trim();
+        if(needle.isEmpty())return;
+        Toast.makeText(this,"Searching this edition…",Toast.LENGTH_SHORT).show();
+        new Thread(()->{
+          ArrayList<Integer> positions=new ArrayList<>();
+          ArrayList<String> excerpts=new ArrayList<>();
+          String q=needle.toLowerCase(Locale.ROOT);
+          for(int i=0;i<paras.size()&&positions.size()<50;i++){
+            String paragraph=paras.get(i);
+            int k=paragraph.toLowerCase(Locale.ROOT).indexOf(q);
+            if(k>=0){
+              positions.add(i);
+              int left=Math.max(0,k-35);
+              int right=Math.min(paragraph.length(),k+needle.length()+80);
+              excerpts.add("¶"+(i+1)+" · …"+paragraph.substring(left,right).replace('\n',' ')+"…");
+            }
+          }
+          runOnUiThread(()->{
+            if(positions.isEmpty()){
+              new AlertDialog.Builder(this).setTitle("No matches").setMessage("No instances of \""+needle+"\" were found in this edition.")
+              .setPositiveButton("Close",null).show();return;
+            }
+            new AlertDialog.Builder(this).setTitle("Search results · "+positions.size()+" (max 50)")
+              .setItems(excerpts.toArray(new String[0]),(dialog,index)->{
+                page=positions.get(index)/4;pref().edit().putInt("page",page).apply();open("Reader");
+              }).setNegativeButton("Close",null).show();
+          });
+        },"AletheiaSearch").start();
+      }).setNegativeButton("Cancel",null).show();
+  }
   void passageActions(int index){
-    String[] choices={"Narrate paragraph","Analyze concepts in this paragraph","Save private annotation","Read annotation","Open in ElevenReader","Compare other translation"};
+    String[] choices={"Narrate paragraph","Analyze concepts in this paragraph","Save private annotation","Read annotation","Bookmark / unbookmark","Open in ElevenReader","Compare other translation"};
     new AlertDialog.Builder(this).setTitle("Paragraph "+(index+1)).setItems(choices,(d,i)->{
       if(i==0)speak(paras.get(index));
       if(i==1)paragraphAnalysis(index);
       if(i==2)edit("p_"+edition+"_"+index,"Annotation · paragraph "+(index+1));
       if(i==3)readNote("p_"+edition+"_"+index);
-      if(i==4)voice.handoffToElevenReader(paras.get(index));
-      if(i==5)compare(index);
+      if(i==4)toggleBookmark(index);
+      if(i==5)voice.handoffToElevenReader(paras.get(index));
+      if(i==6)compare(index);
     }).show();
   }
   void compare(int index){
