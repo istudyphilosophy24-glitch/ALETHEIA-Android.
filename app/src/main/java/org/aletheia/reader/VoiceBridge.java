@@ -42,7 +42,7 @@ public final class VoiceBridge {
           int language=service.setLanguage(Locale.ENGLISH);
           service.setSpeechRate(speed);
           ready=language!=TextToSpeech.LANG_MISSING_DATA&&language!=TextToSpeech.LANG_NOT_SUPPORTED;
-          status=ready?"Ready · "+service.getCurrentEngine():"English voice data missing for this engine";
+          status=ready?"Ready · "+service.getDefaultEngine():"English voice data missing for this engine";
           service.setOnUtteranceProgressListener(new UtteranceProgressListener(){
             @Override public void onStart(String id){}
             @Override public void onDone(String id){}
