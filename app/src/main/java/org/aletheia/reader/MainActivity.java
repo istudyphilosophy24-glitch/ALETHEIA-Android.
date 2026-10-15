@@ -68,7 +68,7 @@ public class MainActivity extends Activity {
     outer.addView(scroller,new LinearLayout.LayoutParams(-1,0,1));
     HorizontalScrollView tabs=new HorizontalScrollView(this);tabs.setHorizontalScrollBarEnabled(false);
     LinearLayout links=new LinearLayout(this);links.setBackgroundColor(Color.WHITE);
-    for(String s:new String[]{"Home","Reader","Glossary","Atlas","Lab","Arena","Notes","Audio","Tutor"}){
+    for(String s:new String[]{"Home","Reader","Compare","Glossary","Atlas","Lab","Arena","Notes","Audio","Tutor"}){
       TextView tab=text(s,13,name.equals(s));tab.setPadding(dp(13),dp(15),dp(13),dp(15));
       tab.setOnClickListener(v->open(s));links.addView(tab);
     }tabs.addView(links);outer.addView(tabs);
@@ -76,6 +76,7 @@ public class MainActivity extends Activity {
       case "Home":home();break;
       case "Reader":try{reader();}catch(Exception error){title("Reader recovery");note("The Reader encountered an error: "+error.getMessage());button("Return to offline study guide",()->{studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");});}break;
       case "Audio":audio();break;
+      case "Compare":comparisonLab();break;
       default:LearningModules.render(this,name);
     }
   }
@@ -83,6 +84,7 @@ public class MainActivity extends Activity {
     title("Being and Time");
     note("A native Android philosophical reading laboratory · offline-first");
     card("THE GREAT READER · OPEN NOW","Start with the complete 83-section offline study index. Import your own Macquarrie–Robinson or Stambaugh PDF / EPUB / TXT to reveal its primary text.",()->{studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");});
+    card("TRANSLATION LABORATORY","Compare two privately imported complete English translations and independently adjust passage alignment.",()->open("Compare"));
     card("PHILOSOPHICAL LEXICON","German concepts, distinctions and etymological study prompts.",()->open("Glossary"));
     card("ONTOLOGICAL ATLAS","Interactive diagrams of Dasein, worldhood, care and temporality.",()->open("Atlas"));
     card("PHENOMENOLOGICAL LABORATORY","Visual experiments in equipment, anxiety and ecstatic time.",()->open("Lab"));
@@ -144,6 +146,7 @@ public class MainActivity extends Activity {
     note("PRIMARY EDITION · "+editionName(edition));
     button("Import from Google Drive / Downloads · PDF, EPUB or TXT",()->importEditionFile(edition));
     button("Locate §"+section+" in this translation (best effort)",()->seekSectionInBook(section));
+    button("OPEN DUAL-TRANSLATION COMPARISON",()->open("Compare"));
     if(paras.isEmpty()){
       card("Primary text not installed yet",
         "Your "+editionName(edition)+" library is empty. Import your licensed searchable PDF, EPUB or TXT using Android's document picker. You can select a file stored in Google Drive when Drive is enabled as a file provider. The imported text remains private and offline.",null);
@@ -406,6 +409,47 @@ public class MainActivity extends Activity {
   }
   void speak(String text){voice.speak(text);}
   void share(String text){voice.share(text);}
+  void comparisonLab(){
+    title("Translation Laboratory");
+    note("Compare your privately imported Macquarrie–Robinson and Stambaugh editions. Paragraphs may be divided differently; use independent positioning instead of assuming equal numbering proves equivalence.");
+    button(books.isAvailable(0)?"✓ Macquarrie–Robinson imported":"IMPORT MACQUARRIE–ROBINSON · PDF / EPUB / TXT",()->importEditionFile(0));
+    button(books.isAvailable(1)?"✓ Stambaugh imported":"IMPORT STAMBAUGH · PDF / EPUB / TXT",()->importEditionFile(1));
+    int[] positions=new int[]{Math.max(0,pref().getInt("compare_mr",0)),Math.max(0,pref().getInt("compare_st",0))};
+    for(int version=0;version<2;version++){
+      final int e=version;
+      title(editionName(e));
+      try{
+        List<String> reading=books.paragraphs(e);
+        if(reading.isEmpty()){note("No imported text yet. Import your licensed copy to activate this side.");continue;}
+        int i=Math.min(positions[e],reading.size()-1);
+        final int current=i;
+        card("¶ "+(i+1)+" / "+reading.size(),reading.get(i),null);
+        button("◀ Previous "+editionName(e),()->{pref().edit().putInt("compare_"+(e==0?"mr":"st"),Math.max(0,current-1)).apply();open("Compare");});
+        button("Next "+editionName(e)+" ▶",()->{pref().edit().putInt("compare_"+(e==0?"mr":"st"),Math.min(reading.size()-1,current+1)).apply();open("Compare");});
+        button("GO TO PARAGRAPH · "+editionName(e),()->{
+          EditText input=new EditText(this);input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+          input.setText(String.valueOf(current+1));input.selectAll();
+          LinearLayout wrapper=new LinearLayout(this);wrapper.setPadding(dp(20),dp(10),dp(20),0);wrapper.addView(input);
+          new AlertDialog.Builder(this).setTitle("Locate translation paragraph")
+            .setView(wrapper).setPositiveButton("Go",(d,w)->{
+              try{
+                int requested=Integer.parseInt(input.getText().toString().trim());
+                pref().edit().putInt("compare_"+(e==0?"mr":"st"),Math.max(0,Math.min(reading.size()-1,requested-1))).apply();
+                open("Compare");
+              }catch(NumberFormatException error){Toast.makeText(this,"Enter a valid paragraph number.",Toast.LENGTH_LONG).show();}
+            }).setNegativeButton("Cancel",null).show();
+        });
+        button("Listen to "+editionName(e)+" passage",()->voice.speak(reading.get(current)));
+      }catch(Exception error){card("Translation could not be opened",error.getMessage(),null);}
+    }
+    title("Philological comparison notes");
+    card("Sein / Seiendes","Being / entities versus Being / beings: compare how English can obscure or disclose a shared German root. Treat capitalization and verbal enunciation as separate interpretive problems.",null);
+    card("Zuhandenheit / Vorhandenheit","Readiness-to-hand / presence-at-hand: distinguish ontological modes of encountering entities, not just physical tool use versus detached observation.",null);
+    card("Care / Sorge","Care is an existential structural whole, not primarily an emotion or the psychological experience of worrying.",null);
+    button("Write a comparative interpretation",()->edit("translation_lab","Translation comparison notes"));
+    button("Review saved comparison",()->readNote("translation_lab"));
+    note("The comparison is entirely offline. Automated passage equivalence, H-page alignment, and original German parallel reading remain editorially unverified.");
+  }
   void audio(){
     title("Audio Study Studio");
     card("ANDROID SPEECH ENGINE · LIVE STATUS",voice.status(),null);
