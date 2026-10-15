@@ -3,6 +3,10 @@ package org.aletheia.reader;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.net.Uri;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -44,7 +48,7 @@ public class MainActivity extends Activity {
   }
   void card(String heading,String description,Runnable click){
     LinearLayout group=new LinearLayout(this);group.setOrientation(1);group.setPadding(dp(14),dp(13),dp(14),dp(13));group.setBackground(bg(Color.WHITE));
-    group.addView(text(heading,17,true));TextView sub=text(description,15,false);sub.setPadding(0,dp(6),0,0);group.addView(sub);
+    group.addView(text(heading,17,true));TextView sub=text(description,15,false);sub.setPadding(0,dp(6),0,0);sub.setTextIsSelectable(click==null);group.addView(sub);
     if(click!=null)group.setOnClickListener(v->click.run());
     LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,dp(5),0,dp(6));content.addView(group,p);
   }
@@ -78,7 +82,7 @@ public class MainActivity extends Activity {
   void home(){
     title("Being and Time");
     note("A native Android philosophical reading laboratory · offline-first");
-    card("THE GREAT READER","Now readable immediately: 83 original offline study orientations, curated interpretations, two translation import libraries, and narration.",()->open("Reader"));
+    card("THE GREAT READER · OPEN NOW","Start with the complete 83-section offline study index. Import your own Macquarrie–Robinson or Stambaugh PDF / EPUB / TXT to reveal its primary text.",()->{studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");});
     card("PHILOSOPHICAL LEXICON","German concepts, distinctions and etymological study prompts.",()->open("Glossary"));
     card("ONTOLOGICAL ATLAS","Interactive diagrams of Dasein, worldhood, care and temporality.",()->open("Atlas"));
     card("PHENOMENOLOGICAL LABORATORY","Visual experiments in equipment, anxiety and ecstatic time.",()->open("Lab"));
@@ -89,7 +93,11 @@ public class MainActivity extends Activity {
     card("YOUR PHILOSOPHICAL PROGRESS",studied+" of 83 sections studied · "+
       (int)(100f*studied/83)+"% · Offline material remains available without importing a book.",null);
     button("Choose a section (§1–§83)",this::pickSection);
-    note("The offline study guide is included. Macquarrie–Robinson and Stambaugh complete texts require separate lawful DRM-free imports.");
+    note("Import your own licensed editions privately from Google Drive or phone storage. Full texts are never uploaded to this public GitHub project.");
+    button("OPEN READER · offline guide",()->{studyMode=true;open("Reader");});
+    button("IMPORT MY MACQUARRIE–ROBINSON EDITION",()->importEditionFile(0));
+    button("IMPORT MY STAMBAUGH EDITION",()->importEditionFile(1));
+    button("TEST NARRATION AND ELEVENREADER",()->open("Audio"));
   }
   void load(){
     try{paras=books.paragraphs(edition);}catch(Exception e){paras=Collections.emptyList();}
@@ -101,7 +109,7 @@ public class MainActivity extends Activity {
   }
   void reader(){
     title("The Great Reader");
-    note("Offline reading, original scholarly orientations and two independent translation libraries.");
+    note("Always usable offline: 83 distinct section orientations. Your legally acquired translation files stay private on this device.");
     button((studyMode?"● ":"○ ")+"ORIGINAL STUDY GUIDE · available offline",()->{
       studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");
     });
@@ -134,11 +142,12 @@ public class MainActivity extends Activity {
       return;
     }
     note("PRIMARY EDITION · "+editionName(edition));
-    button("Import or replace DRM-free TXT / EPUB",()->importEditionFile(edition));
+    button("Import from Google Drive / Downloads · PDF, EPUB or TXT",()->importEditionFile(edition));
+    button("Locate §"+section+" in this translation (best effort)",()->seekSectionInBook(section));
     if(paras.isEmpty()){
       card("Primary text not installed yet",
-        "Your "+editionName(edition)+" library is empty. Copyrighted translations cannot be bundled without permission. Import your own lawfully obtained DRM-free TXT or EPUB, or open the complete offline study index above.",null);
-      button("Choose a book file",()->importEditionFile(edition));
+        "Your "+editionName(edition)+" library is empty. Import your licensed searchable PDF, EPUB or TXT using Android's document picker. You can select a file stored in Google Drive when Drive is enabled as a file provider. The imported text remains private and offline.",null);
+      button("IMPORT BOOK NOW · Drive or Files",()->importEditionFile(edition));
       button("Return to usable offline study reader",()->{
         studyMode=true;pref().edit().putBoolean("studyMode",true).apply();open("Reader");
       });
@@ -147,16 +156,14 @@ public class MainActivity extends Activity {
     int first=Math.min(page*4,Math.max(0,paras.size()-1));
     int last=Math.min(paras.size(),first+4);
     note("Paragraph "+(first+1)+"–"+last+" / "+paras.size()+" · local file order");
-    note("Use section index separately: imported files are not automatically aligned with Heidegger's § numbers.");
-    for(int i=first;i<last;i++){
-      final int at=i;String passage=paras.get(i);
-      String badge=pref().getBoolean("bookmark_"+edition+"_"+i,false)?"★  ":"";
-      card(badge+"PARAGRAPH "+(i+1),passage,()->passageActions(at));
-      button("Analyze / annotate paragraph "+(i+1),()->paragraphAnalysis(at));
-    }
+    note("Section-heading navigation is approximate for imported editions; page and paragraph order always remain unchanged.");
+    for(int i=first;i<last;i++)readerPassage(i);
+    button("A−  Smaller primary text",()->{pref().edit().putInt("readerFont",Math.max(14,pref().getInt("readerFont",18)-1)).apply();open("Reader");});
+    button("A+  Larger primary text",()->{pref().edit().putInt("readerFont",Math.min(28,pref().getInt("readerFont",18)+1)).apply();open("Reader");});
     button("◀ Previous page",()->turn(-1));
     button("Next page ▶",()->turn(1));
-    button("Listen to these paragraphs",()->voice.speak(pageText()));
+    button("▶ READ THIS PAGE ALOUD",()->voice.speak(pageText()));
+    button("OPEN AUDIO ENGINE AND ELEVENREADER SETTINGS",()->open("Audio"));
     button("Send current page to ElevenReader",()->voice.handoffToElevenReader(pageText()));
     button("Search the imported book",this::searchImportedText);
     button("Bookmark / unbookmark displayed page",()->toggleBookmark(first));
@@ -166,6 +173,49 @@ public class MainActivity extends Activity {
     button("Select philosophical section",this::pickSection);
   }
   void saveSection(){pref().edit().putInt("section",section).apply();}
+  void copyText(String value){
+    ClipboardManager manager=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
+    manager.setPrimaryClip(ClipData.newPlainText("ALETHEIA text",value));
+    Toast.makeText(this,"Text copied. Paste into ElevenReader → Write text.",Toast.LENGTH_LONG).show();
+  }
+  void seekSectionInBook(int number){
+    if(paras.isEmpty()){open("Reader");return;}
+    java.util.regex.Pattern pattern=java.util.regex.Pattern.compile("(?iu)^\\\\s*(?:§\\\\s*|section\\\\s+)?"+number+"(?:[.\\\\s:—-]|$)");
+    for(int i=0;i<paras.size();i++){
+      String candidate=paras.get(i).trim();
+      if(candidate.length()<350&&pattern.matcher(candidate).find()){
+        page=i/4;pref().edit().putInt("page",page).apply();open("Reader");
+        Toast.makeText(this,"Possible §"+number+" found. Confirm against the printed edition.",Toast.LENGTH_LONG).show();return;
+      }
+    }
+    new AlertDialog.Builder(this).setTitle("§"+number+" not detected")
+      .setMessage("This edition may omit standard § markers or the imported PDF may have split headings. Use Search the imported book instead.").setPositiveButton("OK",null).show();
+  }
+  void readerPassage(int index){
+    String passage=paras.get(index);
+    LinearLayout panel=new LinearLayout(this);panel.setOrientation(1);
+    panel.setPadding(dp(16),dp(16),dp(16),dp(14));
+    panel.setBackground(bg(Color.WHITE));
+    boolean marked=pref().getBoolean("bookmark_"+edition+"_"+index,false);
+    panel.addView(text((marked?"★ ":"")+"¶ "+(index+1)+" · "+editionName(edition),13,true));
+    TextView body=text(passage,pref().getInt("readerFont",18),true);
+    body.setTypeface(Typeface.SERIF,Typeface.NORMAL);
+    body.setTextColor(INK);body.setTextIsSelectable(true);body.setPadding(0,dp(12),0,dp(12));
+    panel.addView(body);
+    LinearLayout actions=new LinearLayout(this);actions.setOrientation(0);
+    for(String label:new String[]{"Explain","Listen","Note","★"}){
+      TextView b=text(label,13,true);b.setTextColor(BLUE);b.setPadding(dp(7),dp(11),dp(10),dp(11));
+      b.setOnClickListener(v->{
+        switch(label){case "Explain":paragraphAnalysis(index);break;case "Listen":voice.speak(passage);break;
+          case "Note":edit("p_"+edition+"_"+index,"Your commentary · paragraph "+(index+1));break;
+          default:toggleBookmark(index);}
+      });
+      actions.addView(b);
+    }
+    panel.addView(actions);
+    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(13);
+    content.addView(panel,lp);
+  }
   String studyAudio(){
     StringBuilder b=new StringBuilder();
     b.append("Section ").append(section).append(". ").append(Catalog.sectionTitle(section)).append(". ");
@@ -181,7 +231,7 @@ public class MainActivity extends Activity {
       Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
       i.addCategory(Intent.CATEGORY_OPENABLE);
       i.setType("*/*");
-      i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"text/plain","application/epub+zip","application/octet-stream"});
+      i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"text/plain","application/epub+zip","application/pdf","application/octet-stream"});
       startActivityForResult(i,IMPORT);
     }catch(Exception error){
       new AlertDialog.Builder(this).setTitle("Cannot open Android file picker")
@@ -301,7 +351,7 @@ public class MainActivity extends Activity {
       }).setNegativeButton("Cancel",null).show();
   }
   void passageActions(int index){
-    String[] choices={"Narrate paragraph","Analyze concepts in this paragraph","Save private annotation","Read annotation","Bookmark / unbookmark","Open in ElevenReader","Compare other translation"};
+    String[] choices={"Narrate paragraph","Analyze concepts in this paragraph","Save private annotation","Read annotation","Bookmark / unbookmark","Open in ElevenReader","Copy paragraph","Compare other translation"};
     new AlertDialog.Builder(this).setTitle("Paragraph "+(index+1)).setItems(choices,(d,i)->{
       if(i==0)speak(paras.get(index));
       if(i==1)paragraphAnalysis(index);
@@ -309,7 +359,8 @@ public class MainActivity extends Activity {
       if(i==3)readNote("p_"+edition+"_"+index);
       if(i==4)toggleBookmark(index);
       if(i==5)voice.handoffToElevenReader(paras.get(index));
-      if(i==6)compare(index);
+      if(i==6)copyText(paras.get(index));
+      if(i==7)compare(index);
     }).show();
   }
   void compare(int index){
@@ -357,10 +408,10 @@ public class MainActivity extends Activity {
   void share(String text){voice.share(text);}
   void audio(){
     title("Audio Study Studio");
-    card("ANDROID SPEECH ENGINE",voice.status(),"".isEmpty()?null:null);
+    card("ANDROID SPEECH ENGINE · LIVE STATUS",voice.status(),null);
     note("Selected engine: "+voice.engine());
     note("An external reader may not expose itself as a system Text-to-speech engine. Use the ElevenReader handoff separately when required.");
-    button("Refresh engine status",()->open("Audio"));
+    button("Refresh speech connection",()->{voice.init(pref().getString("ttsEngine",null));open("Audio");});
     button("Choose a speech engine installed on Android",()->{
       List<TextToSpeech.EngineInfo> options=voice.engines();
       if(options==null||options.isEmpty()){
@@ -401,6 +452,7 @@ public class MainActivity extends Activity {
     card("ELEVENREADER · EXTERNAL HANDOFF",
       "Try sending text directly to ElevenReader. If it does not accept Android text sharing, the app opens ElevenReader and copies the passage for pasting.",null);
     button("Open current text in ElevenReader",()->voice.handoffToElevenReader(studyMode?studyAudio():pageText()));
+    button("Copy current text for ElevenReader → Write text",()->copyText(studyMode?studyAudio():pageText()));
     button("Show Android sharing choices",()->voice.share(studyMode?studyAudio():pageText()));
   }
   @Override protected void onResume(){
