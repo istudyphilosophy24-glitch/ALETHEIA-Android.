@@ -6,8 +6,8 @@ android {
   applicationId = "org.aletheia.reader"
   minSdk = 26
   targetSdk = 35
-  versionCode = 2
-  versionName = "0.2.0-native"
+  versionCode = 3
+  versionName = "0.3.0-reader-audio-repair"
  }
  compileOptions {
   sourceCompatibility = JavaVersion.VERSION_17
