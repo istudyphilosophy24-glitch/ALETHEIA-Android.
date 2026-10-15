@@ -63,6 +63,26 @@ public final class VisualView extends View {
       }
       ink(MainActivity.INK);c.drawCircle(179,215,14,p);c.drawRoundRect(167,230,191,255,6,6,p);
       label(c,intensity>55?"The familiar world recedes":"Everyday significance",23,67,15);
+    }else if(mode==4){
+      label(c,"PHILOSOPHICAL CONFRONTATION",25,32,16);
+      ink(Color.rgb(234,244,248));c.drawRoundRect(22,46,338,202,18,18,p);
+      ink(Color.rgb(36,87,105));
+      c.drawCircle(180,108,49,p);
+      ink(Color.WHITE);
+      c.drawCircle(180,108,39,p);
+      ink(Color.rgb(45,99,142));
+      c.drawCircle(180,108,23,p);
+      ink(Color.WHITE);
+      p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(24);c.drawText("?",173,117,p);
+      ink(Color.rgb(164,186,195));c.drawRoundRect(43,175,317,185,5,5,p);
+      ink(Color.rgb(45,99,142));c.drawRoundRect(43,175,43+(274*intensity/100f),185,5,5,p);
+      for(int i=0;i<4;i++){
+        float x=58+i*81;
+        ink(intensity>i*25?Color.rgb(45,99,142):Color.rgb(198,210,217));
+        c.drawCircle(x,161,8,p);
+        if(i<3){ink(Color.rgb(164,186,195));c.drawRect(x+10,159,x+72,162,p);}
+      }
+      label(c,"Premises assembled: "+(intensity/25)+"/4",80,214,13);
     }else{
       label(c,"ECSTATIC TEMPORALITY",30,31,18);
       ink(MainActivity.BLUE);
