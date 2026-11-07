@@ -1,0 +1,42 @@
+name: Publish PHILOSOPHIA starter dictionary
+on:
+  push:
+    branches: [philosophia-kitkat]
+    paths:
+      - '.github/workflows/publish-starter-sqlite.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: philosophia-kitkat
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build and verify Android 4.4 compatible SQLite file
+        run: |
+          python3 tools/build_pack.py --demo --output downloads/philosophia.sqlite
+          python3 - <<'PY'
+          import sqlite3
+          con=sqlite3.connect('downloads/philosophia.sqlite')
+          assert con.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+          assert con.execute('PRAGMA user_version').fetchone()[0]==1
+          assert con.execute('SELECT count(*) FROM entries').fetchone()[0]>=232
+          assert con.execute('SELECT value FROM metadata WHERE key="schema_version"').fetchone()[0]=='1'
+          print('Database validated and ready for Android KitKat.')
+          con.close()
+          PY
+      - name: Commit portable starter dictionary on this branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add downloads/philosophia.sqlite
+          if git diff --cached --quiet; then echo 'Database already current'; exit 0; fi
+          git commit -m 'Publish verified KitKat compatible SQLite dictionary'
+          git push origin HEAD:philosophia-kitkat
