@@ -47,8 +47,8 @@ def seeded(db):
             word=row['term'].strip()
             definition=row['definition'].strip()
             if not word or not definition: continue
-            db.execute(INSERT,(word,norm(word),row['language'],'term',definition,
-                               row['tradition'],'','',
+            db.execute(INSERT,(word,norm(word),row['language'],row.get('part_of_speech','term'),definition,
+                               row['tradition'],row.get('thinkers',''),row.get('related',''),
                                'PHILOSOPHIA editorial seed',100))
             n+=1
     db.commit()

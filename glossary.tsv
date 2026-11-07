@@ -1,70 +1,233 @@
-term	language	definition	tradition
-Dasein	German	The entity for which its own Being is an issue; Heidegger's name for the human mode of existing.	Phenomenology
-Sein	German	Being itself, distinguished from any particular being or entity.	Ontology
-Seiendes	German	An entity or that which is, as distinct from Being.	Ontology
-Zuhandenheit	German	Readiness-to-hand: the practical way equipment is encountered within meaningful activity.	Heidegger
-Vorhandenheit	German	Presence-at-hand: the manner of encountering entities as theoretically observed things.	Heidegger
-Befindlichkeit	German	Attunement or disposedness; the affective way Dasein finds itself situated.	Heidegger
-Verstehen	German	Understanding understood as projection of possibilities, not mere cognition.	Heidegger
-Auslegung	German	Interpretation: the working-out of understanding within an articulated context.	Heidegger
-Rede	German	Discourse, the existential articulation of intelligibility.	Heidegger
-Ereignis	German	Event of appropriation or enowning in Heidegger's later thinking.	Heidegger
-Geworfenheit	German	Thrownness: Dasein always already finds itself in a factical world.	Heidegger
-Entwurf	German	Projection: understanding Being in terms of possibilities.	Heidegger
-Mitsein	German	Being-with: the constitutive social relatedness of Dasein.	Heidegger
-Sorge	German	Care, the unified existential structure of Dasein's Being.	Heidegger
-Zeitlichkeit	German	Temporality, the ecstatic unity of future, having-been and present.	Heidegger
-Aufhebung	German	Hegelian sublation: simultaneously cancelling, preserving and elevating a determination.	German Idealism
-Geist	German	Spirit or mind: an evolving historical and social structure of self-conscious intelligibility.	German Idealism
-Wirklichkeit	German	Actuality, especially as determinate rational realization rather than bare existence.	German Idealism
-Begriff	German	The concept or Notion in Hegel's speculative logic.	German Idealism
-an sich	German	In itself: a determination prior to explicit self-relation in Hegel's dialectic.	German Idealism
-für sich	German	For itself: a determination explicitly related to itself.	German Idealism
-Lebenswelt	German	Lifeworld: the pretheoretical horizon of lived experience.	Phenomenology
-noema	Greek	The object as intended or the noematic correlate of an intentional act.	Husserl
-noesis	Greek	The act-side of intentional consciousness, correlated with noema.	Husserl
-epoché	Greek	The methodological suspension of the natural attitude's existential positing.	Husserl
-ἐποχή	Ancient Greek	Suspension or withholding of judgment; also the source of Husserl's methodological term.	Phenomenology
-οὐσία	Ancient Greek	Beingness, substance or essence, varying with philosophical context.	Ancient Greek philosophy
-ἀλήθεια	Ancient Greek	Truth, sometimes interpreted by Heidegger through unconcealment.	Ancient Greek philosophy
-λόγος	Ancient Greek	Word, account, discourse or reason, with meanings depending on context.	Ancient Greek philosophy
-ἀπορία	Ancient Greek	An impasse or philosophical perplexity requiring inquiry.	Ancient Greek philosophy
-φρόνησις	Ancient Greek	Practical wisdom, especially ethical judgment in Aristotle.	Aristotle
-ἐνέργεια	Ancient Greek	Activity or actuality; a central Aristotelian determination.	Aristotle
-δύναμις	Ancient Greek	Potentiality, capacity or power.	Aristotle
-intentionality	English	The directedness of consciousness toward something, whether or not that thing exists.	Phenomenology
-phenomenology	English	A discipline describing how things appear or are given in experience.	Phenomenology
-ontological difference	English	The distinction between Being and beings, central to Heidegger's project.	Ontology
-transcendental reduction	English	The Husserlian turn toward the structures that constitute the appearing of objects.	Husserl
-hermeneutics	English	The theory or practice of interpretation and understanding.	Hermeneutics
-dialectic	English	A process of reasoning or immanent movement of determinations through their tensions.	German Idealism
-metaphysics	English	Inquiry into ultimate grounds, categories, or principles of reality.	Metaphysics
-epistemology	English	The philosophical study of knowledge, justification and epistemic limits.	Epistemology
-mereology	English	The formal study of parts, wholes, and their relations.	Formal ontology
-supervenience	English	A relation where differences in one family of properties require differences in another.	Metaphysics
-haecceity	English	Thisness: what individuates an entity as this very one.	Metaphysics
-qualia	English	The qualitative character of conscious experience.	Philosophy of mind
-différance	French	Derrida's term invoking both deferral and differentiation in the production of meaning.	Deconstruction
-écriture	French	Writing, treated by Derrida as structurally implicated in signification.	Deconstruction
-ressentiment	French	A reactive affective orientation analyzed by Nietzsche, Scheler and others.	Ethics
-épistémè	Greek	A form of knowledge; also Foucault's term for historical conditions of discourse.	Epistemology
-savoir	French	Knowledge or knowing; in Foucault distinct in usage from scientific connaissance.	Foucault
-habitus	Latin	Durable embodied dispositions acquired through social history.	Social theory
-a priori	Latin	Knowable independently of particular empirical experience, though interpretations vary.	Epistemology
-a posteriori	Latin	Dependent for justification on particular experience.	Epistemology
-prima facie	Latin	At first appearance; defeasible unless countervailing considerations arise.	Logic
-quidditas	Latin	Whatness, essence, or the answer to what something is.	Scholasticism
-ens	Latin	A being, an existent or something that is.	Scholasticism
-ipsum esse subsistens	Latin	Subsistent Being itself, used in Aquinas's account of God.	Thomism
-intersubjectivity	English	The constitution and negotiation of sense among subjects or perspectives.	Phenomenology
-eidetic variation	English	A procedure varying examples imaginatively to discern essential invariants.	Phenomenology
-horizon	English	The implicit field of possible appearances, references and anticipations surrounding an object.	Phenomenology
-retention	English	The just-elapsed phase maintained in the temporal flow of consciousness.	Husserl
-protention	English	The anticipatory orientation toward what is about to occur.	Husserl
-reification	English	The treatment of social relations or processes as thinglike, independent entities.	Critical theory
-alienation	English	A condition of estrangement from one's activity, products, relations or possibilities.	Social philosophy
-immanence	English	Remaining within a domain, as opposed to external transcendence.	Metaphysics
-transcendence	English	Going beyond a given limit or horizon; its meaning depends on tradition.	Metaphysics
-recontextualization	English	Placing an object, claim or practice into a new interpretive or operative context.	Hermeneutics
-disclosure	English	The opening of a field in which beings become intelligible as what they are.	Heidegger
-worldhood	English	The referential structure through which a world is intelligible as a world.	Heidegger
+term	language	part_of_speech	definition	tradition	thinkers	related
+Dasein	German	noun	Heidegger's term for the being that each of us is: an entity whose own Being is at issue for it. It is not simply a synonym for the biological human organism, subject, or consciousness.	Phenomenology	Martin Heidegger	Being-in-the-world,Existenz,ontological difference
+Sein	German	noun	Being, as distinct from particular beings (Seiendes); the question of the meaning of Being drives Heidegger's fundamental ontology.	Ontology	Martin Heidegger	Seiendes,ontological difference
+Seiendes	German	noun	An entity or a being: something that is, distinguished from its Being (Sein).	Ontology	Martin Heidegger	Sein,ontological difference
+ontological difference	English	noun	The distinction between Being, in virtue of which entities are understood as entities, and beings or entities themselves. It is not a division between two kinds of things.	Ontology	Martin Heidegger	Sein,Seiendes
+Being-in-the-world	English	noun	The unitary structure of Dasein's situated existence: Dasein is always already involved with meaningful surroundings, rather than an isolated subject subsequently connected to objects.	Phenomenology	Martin Heidegger	Dasein,worldhood
+worldhood	English	noun	The structural character of world as a meaningful context of involvement and significance, not the sum of spatially extended objects.	Phenomenology	Martin Heidegger	Being-in-the-world,significance
+Zuhandenheit	German	noun	Readiness-to-hand: the mode in which equipment is disclosed primarily through practical involvement, use, and referential relations rather than detached theoretical inspection.	Phenomenology	Martin Heidegger	Vorhandenheit,equipment
+Vorhandenheit	German	noun	Presence-at-hand: the mode in which something is encountered as a determinable entity with properties, particularly in a theoretical or detached attitude.	Phenomenology	Martin Heidegger	Zuhandenheit
+Befindlichkeit	German	noun	Attunement or disposedness: an existential structure through which Dasein finds itself affectively situated in the world; not merely a private psychological emotion.	Phenomenology	Martin Heidegger	Stimmung,thrownness
+Stimmung	German	noun	Mood or attunement: how the world as a whole matters or appears to Dasein before any explicit judgment; not merely a passing feeling.	Phenomenology	Martin Heidegger	Befindlichkeit
+Geworfenheit	German	noun	Thrownness: Dasein's already finding itself delivered into a situation, history, and possibilities it did not originally choose.	Phenomenology	Martin Heidegger	facticity,projection
+Entwurf	German	noun	Projection: Dasein's understanding itself through possibilities. Not a deliberate plan or mental representation, but the existential opening of possible ways to be.	Phenomenology	Martin Heidegger	understanding,thrownness
+Verfallen	German	noun	Falling or fallenness: Dasein's absorption in everyday public interpretations and concerns; not a moral doctrine of original sin.	Phenomenology	Martin Heidegger	das Man,authenticity
+Sorge	German	noun	Care: Heidegger's formal articulation of Dasein's Being as ahead-of-itself, already-in-a-world, and alongside entities encountered within that world.	Phenomenology	Martin Heidegger	Dasein,temporality
+Angst	German	noun	Anxiety: a fundamental attunement in which ordinary significance recedes and Dasein confronts its own possibility of Being-in-the-world. Distinct from fear of a particular entity.	Existentialism	Martin Heidegger,Søren Kierkegaard	Nothingness,authenticity
+Eigentlichkeit	German	noun	Authenticity or ownmostness: a modification of everyday existence in which Dasein appropriates its own possibilities; not a personality trait or a demand to be socially eccentric.	Phenomenology	Martin Heidegger	das Man,resoluteness
+Uneigentlichkeit	German	noun	Inauthenticity: Dasein's everyday mode of living through socially available possibilities; not automatically a moral condemnation.	Phenomenology	Martin Heidegger	Eigentlichkeit,das Man
+das Man	German	phrase	The anonymous anyone or 'the they': the socially shared understanding within which Dasein initially interprets what one does, says, and values.	Phenomenology	Martin Heidegger	fallenness,authenticity
+Mitsein	German	noun	Being-with: the existential structure whereby Dasein's world is already shared with others, even in solitude or indifference.	Phenomenology	Martin Heidegger	Dasein,Being-in-the-world
+Mitdasein	German	noun	Being-there-with: the Being of others as encountered within a shared world; not a physical aggregate of individuals.	Phenomenology	Martin Heidegger	Mitsein
+Rede	German	noun	Discourse: the articulation of intelligibility prior to, and capable of expression in, spoken or written language.	Phenomenology	Martin Heidegger	logos,understanding
+Verstehen	German	noun	Understanding: an existential structure of Dasein's projection upon possibilities, not merely the possession of theoretical information.	Phenomenology	Martin Heidegger	Entwurf,interpretation
+Auslegung	German	noun	Interpretation: the articulation of what understanding already discloses, always structured by fore-having, fore-sight, and fore-conception.	Hermeneutics	Martin Heidegger	hermeneutic circle,fore-structure
+hermeneutic circle	English	noun	The reciprocal relation between interpreting a part and understanding a whole, or between prior understanding and explicit interpretation. It need not be a fallacious logical circle.	Hermeneutics	Friedrich Schleiermacher,Martin Heidegger,Hans-Georg Gadamer	Auslegung,fore-structure
+fore-structure	English	noun	The antecedent structure of interpretation in Heidegger: fore-having, fore-sight, and fore-conception; interpretation does not begin from absolute presuppositionlessness.	Hermeneutics	Martin Heidegger	Auslegung
+Ereignis	German	noun	In later Heidegger, the event of appropriation or enowning in which Being and human belonging are thought together. Translating it simply as 'event' can obscure its distinctive usage.	Ontology	Martin Heidegger	Sein,aletheia
+aletheia	Ancient Greek	noun	ἀλήθεια: unconcealment or disclosure in Heidegger's interpretation of Greek truth; historically, also the ordinary Greek word for truth. The Heideggerian reading must not be equated automatically with classical Greek usage.	Phenomenology	Martin Heidegger	truth,disclosure
+ἀλήθεια	Ancient Greek	noun	Truth; in Heidegger's philosophical reinterpretation, unconcealment. The historical Greek term has a broader ordinary semantic range than this later philosophical appropriation.	Ancient philosophy	Plato,Aristotle,Martin Heidegger	aletheia
+phainomenon	Ancient Greek	noun	That which shows itself or appears. Heidegger derives his formal notion of phenomenon from the Greek phainesthai, while distinguishing showing-itself from mere semblance.	Phenomenology	Martin Heidegger	phenomenon,logos
+φαινόμενον	Ancient Greek	noun	That which appears or shows itself; source of 'phenomenon'. Its philosophical construal differs among ancient and modern authors.	Ancient philosophy	Aristotle,Edmund Husserl,Martin Heidegger	phenomenon
+λόγος	Ancient Greek	noun	Logos: a richly polysemous Greek word involving speech, account, reason, or discourse. In Heidegger's reading, it can articulate letting something be seen as something.	Ancient philosophy	Heraclitus,Aristotle,Martin Heidegger	logos,Rede
+logos	Ancient Greek	noun	A saying, account, ratio, reason, or discourse; its philosophical significance varies sharply among Heraclitus, Aristotle, the Stoics, and Heidegger.	Ancient philosophy	Heraclitus,Aristotle	λόγος
+phenomenology	English	noun	A family of philosophical methods investigating how things are given or appear in experience and the structures that make such givenness possible. Husserlian transcendental phenomenology, Heideggerian hermeneutics, and Merleau-Pontian approaches are not interchangeable.	Phenomenology	Edmund Husserl,Martin Heidegger,Maurice Merleau-Ponty	intentionality,epoché
+intentionality	English	noun	The directedness or aboutness of consciousness or experience toward an object, state of affairs, or possibility. It does not primarily mean having an intention to act.	Phenomenology	Franz Brentano,Edmund Husserl	noesis,noema
+noesis	Ancient Greek	noun	In Husserl, the act-side of an intentional experience, considered in correlation with its noematic correlate. It should not be reduced to a separable mental substance.	Phenomenology	Edmund Husserl	noema,intentionality
+noema	Ancient Greek	noun	In Husserl, a noematic correlate of an intentional act, including an object as meant; its exact ontological interpretation is contested among phenomenologists.	Phenomenology	Edmund Husserl	noesis,intentionality
+noematic sense	English	noun	The sense through which an intended object appears as such-and-such within a noematic analysis; distinct from merely the object's physical properties.	Phenomenology	Edmund Husserl	noema
+epoché	Ancient Greek	noun	The methodological suspension of the natural attitude's existential positing in Husserl's phenomenology. It does not entail denying that the world exists.	Phenomenology	Edmund Husserl	phenomenological reduction,natural attitude
+ἐποχή	Ancient Greek	noun	Suspension of judgment in ancient skepticism; later reworked by Husserl for methodological bracketing in transcendental phenomenology.	Ancient philosophy	Sextus Empiricus,Edmund Husserl	epoché
+phenomenological reduction	English	noun	A methodological redirection from the natural attitude toward the correlation between experiencing and experienced meaning; not a claim that reality can be erased.	Phenomenology	Edmund Husserl	epoché,transcendental subjectivity
+natural attitude	English	noun	In Husserl, ordinary straightforward involvement in a pregiven world whose existence is taken for granted before phenomenological reflection.	Phenomenology	Edmund Husserl	epoché,lifeworld
+lifeworld	English	noun	Lebenswelt: the pretheoretical world of lived practice and meaning that scientific idealizations presuppose, especially in Husserl's later work.	Phenomenology	Edmund Husserl,Alfred Schutz	Lebenswelt,constitution
+Lebenswelt	German	noun	Life-world: the lived, historically and socially meaningful world presupposed by theoretical objectification.	Phenomenology	Edmund Husserl,Alfred Schutz	lifeworld
+constitution	English	noun	In phenomenology, the structured formation of an object's sense and validity within intentional experience; not necessarily causal manufacture of the object by a mind.	Phenomenology	Edmund Husserl	intentionality,transcendental subjectivity
+transcendental ego	English	noun	In Husserl, the ego considered through transcendental reduction as pole of intentional life and constitutive performances; not simply the empirical psychological self.	Phenomenology	Edmund Husserl	epoché,constitution
+transcendental subjectivity	English	noun	Subjectivity investigated as the condition for the appearance and validity of objects, rather than as one merely empirical entity among others.	Phenomenology	Edmund Husserl,Immanuel Kant	constitution,transcendental ego
+horizon	English	noun	In phenomenology, the open field of implicit possibilities and anticipations co-given with any particular object or experience; a structured openness rather than a literal visual line.	Phenomenology	Edmund Husserl,Martin Heidegger	intentionality,lifeworld
+protention	English	noun	In Husserl's analyses of internal time-consciousness, the anticipatory orientation toward the imminent future, correlated with retention and primal impression.	Phenomenology	Edmund Husserl	retention,internal time-consciousness
+retention	English	noun	The immediate holding-on of just-elapsed experience within the present temporal flow; distinct from explicitly recollecting a past event.	Phenomenology	Edmund Husserl	protention,internal time-consciousness
+internal time-consciousness	English	noun	Husserl's analysis of the temporal constitution of experience through primal impression, retention, and protention.	Phenomenology	Edmund Husserl	retention,protention
+embodiment	English	noun	The constitutive role of the lived body in perception, action, affectivity, and world-relation; not merely possession of a physiological organism.	Phenomenology	Maurice Merleau-Ponty	body schema,flesh
+body schema	English	noun	The prereflective practical organization of bodily possibilities that structures movement and spatial engagement; distinguished from an explicit image of one's body.	Phenomenology	Maurice Merleau-Ponty	motor intentionality,embodiment
+motor intentionality	English	noun	Bodily directedness in skilled movement and practical perception, typically prior to explicit propositional deliberation.	Phenomenology	Maurice Merleau-Ponty	body schema,embodiment
+flesh	English	noun	In Merleau-Ponty's late ontology, a general element of intertwining between sentient and sensible; not just organic tissue.	Phenomenology	Maurice Merleau-Ponty	chiasm,reversibility
+chiasm	English	noun	Merleau-Ponty's notion of the crossing or intertwining of perceiver and perceived, exemplified by the reversibility of touching and being touched.	Phenomenology	Maurice Merleau-Ponty	flesh,reversibility
+reversibility	English	noun	The reciprocal relation of the sensing body and the sensed world, never exhausted by perfect identity between the two.	Phenomenology	Maurice Merleau-Ponty	chiasm,flesh
+Aufhebung	German	noun	Hegel's dialectical sublation: a determination is negated, preserved, and taken up within a more comprehensive determination. No single English word fully captures the interplay.	German Idealism	G. W. F. Hegel	dialectic,determinate negation
+aufheben	German	verb	To cancel, preserve, or raise up; Hegel strategically exploits these meanings in the philosophical notion of Aufhebung.	German Idealism	G. W. F. Hegel	Aufhebung
+an sich	German	phrase	In itself: a determination considered implicitly or as it is apart from its full explicit development; must be interpreted in its systematic context in Hegel.	German Idealism	G. W. F. Hegel	für sich,an und für sich
+für sich	German	phrase	For itself: a determination that has become explicitly related to itself, in contrast with a merely implicit in-itself.	German Idealism	G. W. F. Hegel	an sich
+an und für sich	German	phrase	In and for itself: a determination whose implicit content and explicit self-relation have been mediated; a systematic Hegelian expression, not an idiom with one fixed sense.	German Idealism	G. W. F. Hegel	an sich,für sich
+determinate negation	English	noun	Negation that produces a specific new determination from tensions internal to the previous one, rather than a merely abstract or empty 'not'.	German Idealism	G. W. F. Hegel	Aufhebung,dialectic
+dialectic	English	noun	A mode of thinking through internally related determinations and their transformations. In Hegel, it is not adequately summarized as a mechanical thesis-antithesis-synthesis formula.	German Idealism	G. W. F. Hegel,Plato	Aufhebung,determinate negation
+Geist	German	noun	Spirit or mind: in Hegel, the developing structure of individual, social, historical, and self-knowing life; translation depends on context.	German Idealism	G. W. F. Hegel	absolute spirit,recognition
+absolute spirit	English	noun	In Hegel's system, Spirit's self-understanding articulated through art, religion, and philosophy; not merely a supernatural entity.	German Idealism	G. W. F. Hegel	Geist
+recognition	English	noun	A relation in which subjects acknowledge one another's status or standing; crucial for Hegel's accounts of self-consciousness and social freedom.	German Idealism	G. W. F. Hegel,Axel Honneth	Geist,master-slave dialectic
+master-slave dialectic	English	noun	A customary label for Hegel's account of lordship and bondage in the Phenomenology of Spirit, where dependence, labor, fear, and recognition reshape self-consciousness.	German Idealism	G. W. F. Hegel	recognition
+negativity	English	noun	The power or structure of negation within thought, existence, or development; its meaning differs in Hegel, Adorno, Sartre, and others.	Critical theory	G. W. F. Hegel,Theodor Adorno,Jean-Paul Sartre	determinate negation
+negation of the negation	English	noun	In Hegelian dialectics, a second negation that can yield a mediated positive determination; not a rule that every double negative automatically restores the starting point.	German Idealism	G. W. F. Hegel	determinate negation
+Begriff	German	noun	Concept or Notion. In Hegel's Logic, the Begriff is a self-differentiating intelligible structure, not simply a subjective general term.	German Idealism	G. W. F. Hegel	judgment,syllogism
+Wirklichkeit	German	noun	Actuality: in Hegel, a systematic unity of essence and existence, not a synonym for whatever happens to exist at a given moment.	German Idealism	G. W. F. Hegel	actuality,possibility
+actuality	English	noun	In metaphysics, the condition of being actual rather than merely potential or possible. Hegel's Wirklichkeit has a more technical meaning tied to necessity and essence.	Metaphysics	Aristotle,G. W. F. Hegel	Wirklichkeit,potentiality
+Ansichsein	German	noun	Being-in-itself: a technical term whose sense differs between German Idealism and Sartrean existentialism.	Ontology	G. W. F. Hegel,Jean-Paul Sartre	an sich
+Fürsichsein	German	noun	Being-for-itself: a structure of reflexivity or self-relation; in Sartre, associated with conscious existence.	Ontology	G. W. F. Hegel,Jean-Paul Sartre	für sich
+transcendental apperception	English	noun	In Kant, the formal 'I think' that must be able to accompany representations for them to belong to one self-conscious experience.	German Idealism	Immanuel Kant	categories,synthetic unity
+thing in itself	English	noun	The thing considered apart from the conditions under which it appears to us, in Kant's critical philosophy; not an empirically discoverable hidden object.	German Idealism	Immanuel Kant	noumenon,phenomenon
+noumenon	English	noun	In Kant, an intelligible object considered apart from sensible intuition; the negative sense sets limits to sensible cognition, while the positive sense would require non-sensible intuition.	German Idealism	Immanuel Kant	thing in itself
+synthetic a priori	English	adjective	A judgment claimed to extend knowledge while being knowable independently of particular experiences; central to Kant's question about mathematics and natural science.	German Idealism	Immanuel Kant	transcendental deduction
+transcendental deduction	English	noun	Kant's argument for the objective validity of the categories as conditions of possible experience.	German Idealism	Immanuel Kant	categories,transcendental apperception
+categories	English	noun	In Kant, pure concepts of the understanding organizing judgments and experience; in Aristotle, fundamental kinds of predication or being.	Metaphysics	Aristotle,Immanuel Kant	transcendental deduction
+antinomies	English	noun	Contradictions of pure reason when it seeks determinate knowledge beyond possible experience; a central subject of Kant's transcendental dialectic.	German Idealism	Immanuel Kant	transcendental illusion
+transcendental illusion	English	noun	The tendency of reason to mistake its regulative demand for completeness for knowledge of an object beyond experience.	German Idealism	Immanuel Kant	antinomies
+monad	English	noun	For Leibniz, a simple, non-extended substance expressing the universe from its own point of view; monads do not causally exchange states by physical interaction.	Rationalism	G. W. Leibniz	pre-established harmony
+pre-established harmony	English	noun	Leibniz's thesis that created substances correspond without direct intersubstantial causal influence because of an originally coordinated order.	Rationalism	G. W. Leibniz	monad
+principle of sufficient reason	English	noun	The principle that every fact has a sufficient explanation or ground; its formulation and scope vary among Leibniz, Schopenhauer, and contemporary metaphysics.	Metaphysics	G. W. Leibniz,Arthur Schopenhauer	ground,necessity
+PSR	English	abbreviation	Abbreviation for principle of sufficient reason: the demand that facts admit a sufficient ground or explanation.	Metaphysics	G. W. Leibniz	principle of sufficient reason
+substance	English	noun	That which exists or is understood as a bearer of properties, or as self-subsistent reality, depending on Aristotle, Spinoza, Leibniz, or later metaphysical systems.	Metaphysics	Aristotle,Baruch Spinoza,G. W. Leibniz	accident
+essence	English	noun	What a thing is or what constitutes its nature, in contrast to its accidental features; theories of essence differ substantially across philosophical traditions.	Metaphysics	Aristotle,Edmund Husserl	accident,eidetic variation
+accident	English	noun	A property that does not belong to a thing's essence, or (in Aristotelian metaphysics) a feature inhering in a subject rather than existing independently.	Metaphysics	Aristotle	substance,essence
+eidetic variation	English	noun	Phenomenological imaginative variation of examples to disclose invariant essential structures; not statistical generalization from observed cases.	Phenomenology	Edmund Husserl	essence,eidos
+eidos	Ancient Greek	noun	Form or kind; used differently in Plato, Aristotle, and Husserl, including Husserl's technical talk of essences grasped through eidetic intuition.	Ancient philosophy	Plato,Aristotle,Edmund Husserl	essence,eidetic variation
+εἶδος	Ancient Greek	noun	Form, appearance, or kind; a foundational Greek philosophical term with different roles in Plato and Aristotle.	Ancient philosophy	Plato,Aristotle	eidos
+ous	Ancient Greek	noun	Intellect or mind. In Aristotle, it names an intellectual power, while Neoplatonism develops Nous as a distinct metaphysical principle.	Ancient philosophy	Aristotle,Plotinus	logos
+νοῦς	Ancient Greek	noun	Mind, understanding, or intellect; later philosophers give it distinct systematic meanings.	Ancient philosophy	Anaxagoras,Aristotle,Plotinus	nous
+ous poietikos	Ancient Greek	noun	Productive or active intellect in debates arising from Aristotle's De Anima III.5; its interpretation is famously disputed.	Ancient philosophy	Aristotle,Averroes	ous
+phronesis	Ancient Greek	noun	Practical wisdom: the acquired capacity to deliberate well about action and human flourishing in concrete circumstances.	Ethics	Aristotle	praxis,techne
+φρόνησις	Ancient Greek	noun	Practical wisdom; an Aristotelian intellectual virtue concerned with the contingencies of good action.	Ancient philosophy	Aristotle	phronesis
+praxis	Ancient Greek	noun	Action or practice whose end can be internal to the activity, contrasted with productive making in several Aristotelian contexts.	Ancient philosophy	Aristotle	poiesis,phronesis
+poiesis	Ancient Greek	noun	Making or production, often distinguished from action (praxis) in Aristotle's account of human activities.	Ancient philosophy	Aristotle	praxis,techne
+techne	Ancient Greek	noun	Art, craft, or skill-like knowledge of making; distinct from practical wisdom and theoretical knowledge in Aristotle.	Ancient philosophy	Aristotle	praxis,phronesis
+τέχνη	Ancient Greek	noun	Art or craft: skilled knowledge of how to produce something; the source of modern 'technique' and 'technology'.	Ancient philosophy	Plato,Aristotle	techne
+entelechy	English	noun	Aristotelian actuality understood as the realization or completeness of a thing's form or end; not merely efficient mechanical activity.	Metaphysics	Aristotle	actuality,potentiality
+potentiality	English	noun	Capacity or possibility for a determination or change; for Aristotle, dynamis is correlated with energeia or actuality.	Metaphysics	Aristotle	actuality,dynamis
+dynamis	Ancient Greek	noun	Power or capacity; Aristotle's technical concept of potentiality, not merely subjective logical possibility.	Ancient philosophy	Aristotle	potentiality,energeia
+energeia	Ancient Greek	noun	Activity or actuality, central in Aristotle's analyses of being-at-work, realization, and the relation to potentiality.	Ancient philosophy	Aristotle	entelechy,dynamis
+ousia	Ancient Greek	noun	Being or substance; one of the most context-sensitive terms in Aristotle's metaphysics and a major subject in Heidegger's interpretation of Greek ontology.	Ancient philosophy	Aristotle,Martin Heidegger	substance
+οὐσία	Ancient Greek	noun	Substance, being, or essence in ancient Greek philosophy, especially Aristotle; cannot safely be rendered with one English word in every passage.	Ancient philosophy	Plato,Aristotle	ousia
+aporia	Ancient Greek	noun	A philosophical difficulty or impasse that demands further investigation; not a simple contradiction to be dismissed.	Ancient philosophy	Plato,Aristotle	elenchus
+ἀπορία	Ancient Greek	noun	A state of puzzlement, impasse, or difficulty produced by philosophical questioning.	Ancient philosophy	Plato,Aristotle	aporia
+elenchus	Ancient Greek	noun	Socratic examination by questioning that tests a claim's consistency with an interlocutor's other commitments.	Ancient philosophy	Socrates,Plato	aporia
+phenomenal consciousness	English	noun	Conscious experience considered in terms of what it is like for a subject; a prominent issue in contemporary philosophy of mind.	Philosophy of mind	Thomas Nagel,David Chalmers	qualia,hard problem of consciousness
+qualia	Latin	noun	Qualitative aspects of experiences, such as the experienced redness of red; their metaphysical status is disputed.	Philosophy of mind	Thomas Nagel,Daniel Dennett	phenomenal consciousness
+hard problem of consciousness	English	noun	The problem of explaining why and how physical and functional processes are accompanied by subjective experience, as formulated by David Chalmers.	Philosophy of mind	David Chalmers	qualia,phenomenal consciousness
+Mary's room	English	noun	Frank Jackson's knowledge argument involving a color scientist who has complete physical knowledge but has never seen color, used to test physicalism.	Philosophy of mind	Frank Jackson	qualia
+intentional stance	English	noun	Dennett's strategy of predicting a system by interpreting it as having beliefs and desires, regardless of the system's ultimate physical organization.	Philosophy of mind	Daniel Dennett	intentionality
+supervenience	English	noun	A dependence relation in which there cannot be a difference in one set of properties without some difference in a specified base; it does not by itself establish reductive identity.	Metaphysics	Donald Davidson,Jaegwon Kim	physicalism,emergence
+emergence	English	noun	The appearance of higher-level properties or organization not straightforwardly reducible to component-level descriptions; strong and weak versions differ in causal commitments.	Philosophy of science	C. D. Broad,Jaegwon Kim	supervenience,reduction
+multiple realizability	English	noun	The possibility that one higher-level function or property is instantiated by physically diverse lower-level structures; prominent in arguments against simple type-identity theories.	Philosophy of mind	Hilary Putnam,Jerry Fodor	functionalism
+functionalism	English	noun	In philosophy of mind, an account of mental states in terms of functional or causal roles instead of fixed material composition.	Philosophy of mind	Hilary Putnam,Jerry Fodor	multiple realizability
+externalism	English	noun	The view that some mental contents, meanings, or epistemic standings depend constitutively on relations beyond the subject's internal states.	Epistemology	Hilary Putnam,Tyler Burge	internalism
+internalism	English	noun	A family of views according to which a subject's mental contents or justificatory conditions are determined by internal features, with substantial variation between theories.	Epistemology	René Descartes	critical realism,externalism
+inference to the best explanation	English	noun	A form of abductive reasoning that favors a hypothesis because of its comparative explanatory virtues, not because it follows deductively from the evidence.	Philosophy of science	Gilbert Harman	abduction
+abduction	English	noun	Reasoning from observations to an explanatory hypothesis, associated with Charles Sanders Peirce; generally ampliative rather than deductively valid.	Logic	Charles Sanders Peirce	inference to the best explanation
+underdetermination	English	noun	The possibility that available evidence fails to determine uniquely which of several theories is true.	Philosophy of science	Pierre Duhem,W. V. O. Quine	confirmation holism
+confirmation holism	English	noun	The thesis that statements face experiential testing in interconnected theoretical networks rather than always individually.	Philosophy of science	Pierre Duhem,W. V. O. Quine	underdetermination
+paradigm	English	noun	In Kuhn, a shared disciplinary exemplar or matrix shaping normal scientific research, rather than simply a generic model or fashion.	Philosophy of science	Thomas Kuhn	normal science
+normal science	English	noun	In Kuhn, puzzle-solving research conducted within a largely shared disciplinary paradigm.	Philosophy of science	Thomas Kuhn	paradigm
+falsifiability	English	noun	A proposed criterion of scientific status requiring that a theory prohibit some possible observational outcomes; associated with Popper and subject to important qualifications.	Philosophy of science	Karl Popper	corroboration
+corroboration	English	noun	In Popper's philosophy, the degree to which a conjecture has survived severe tests; not a probability that the theory is true.	Philosophy of science	Karl Popper	falsifiability
+transcendental argument	English	noun	An argument inferring necessary conditions for some accepted feature of experience, thought, or practice; success depends on whether the proposed conditions genuinely follow.	Epistemology	Immanuel Kant,P. F. Strawson	transcendental deduction
+analytic a priori	English	adjective	A proposition claimed to be true by virtue of meaning or conceptual relations and knowable without empirical investigation, under traditions that accept the analytic-synthetic distinction.	Logic	Immanuel Kant,Rudolf Carnap	analytic-synthetic distinction
+analytic-synthetic distinction	English	noun	The distinction between truths grounded in meaning or concepts and truths depending on how the world is; Quine famously challenged its sharpness.	Logic	Immanuel Kant,W. V. O. Quine	analytic a priori
+intensionality	English	noun	Semantic sensitivity to how something is described or represented, as in belief contexts where substitution of co-referential terms may fail.	Logic	Gottlob Frege	intensional context
+possible worlds	English	noun	Ways reality could have been, represented semantically or metaphysically depending on the theory; not necessarily other physically existing universes.	Modal logic	Saul Kripke,David Lewis	necessity,contingency
+rigid designator	English	noun	In Kripke, an expression that designates the same object in every possible world where that object exists.	Modal logic	Saul Kripke	possible worlds
+necessity	English	noun	A proposition's holding in all relevant possible worlds, or a state of affairs that cannot fail to obtain, with the relevant modality requiring specification.	Modal logic	Aristotle,Saul Kripke	possibility
+contingency	English	noun	A state of affairs that holds but could have been otherwise under an indicated modality.	Modal logic	G. W. Leibniz	necessity
+modal realism	English	noun	David Lewis's thesis that possible worlds are as concrete as the actual world, differing in indexical relation to us rather than degree of reality.	Modal logic	David Lewis	possible worlds
+haecceity	Latin	noun	Thisness: an individualizing feature or principle by which an entity is the particular individual it is, associated with Duns Scotus.	Medieval philosophy	John Duns Scotus	quiddity
+quiddity	Latin	noun	Whatness: the essence or what-it-is of a thing, contrasted in some scholastic discussions with its individual thisness.	Medieval philosophy	Thomas Aquinas,John Duns Scotus	haecceity,essence
+esse	Latin	noun	To be, or the act of being; particularly significant in scholastic discussions of essence and existence.	Medieval philosophy	Thomas Aquinas	essence,existence
+ens	Latin	noun	A being or entity; often distinguished from esse, the act of being, in medieval metaphysics.	Medieval philosophy	Thomas Aquinas	esse
+ens commune	Latin	noun	Being in general, considered as the common object of metaphysical inquiry in several scholastic traditions.	Medieval philosophy	Thomas Aquinas,John Duns Scotus	ens
+ipsum esse subsistens	Latin	phrase	Subsistent Being itself: Aquinas's technical characterization of God as not having being by participation but as subsistent existence.	Medieval philosophy	Thomas Aquinas	esse
+actus purus	Latin	phrase	Pure act: actuality without unrealized passive potentiality in Aristotelian-Thomistic accounts of divine perfection.	Medieval philosophy	Thomas Aquinas	actuality,potentiality
+analogia entis	Latin	phrase	Analogy of being: the analogical predication of being across distinct orders of reality, notably in scholastic theology.	Medieval philosophy	Thomas Aquinas	esse
+univocity of being	English	noun	The thesis that 'being' is said in one intelligible sense across its applications; developed distinctively by Duns Scotus and reconsidered by Deleuze.	Metaphysics	John Duns Scotus,Gilles Deleuze	analogia entis
+conatus	Latin	noun	Striving or endeavor; for Spinoza, each thing's effort to persevere in its being according to its nature.	Rationalism	Baruch Spinoza	substance
+Deus sive Natura	Latin	phrase	'God or Nature': Spinoza's identification of God with the one infinite substance, not a personal creator standing outside nature.	Rationalism	Baruch Spinoza	substance,conatus
+ressentiment	French	noun	A reactive, persistent form of hostility or value-distortion analyzed differently by Nietzsche and Scheler; not equivalent to any momentary resentment.	Genealogy	Friedrich Nietzsche,Max Scheler	master morality,slave morality
+will to power	English	noun	Nietzsche's disputed notion of striving, interpretation, and power relations within life; not simply a conscious desire to dominate others.	Genealogy	Friedrich Nietzsche	ressentiment
+Übermensch	German	noun	Nietzsche's figure of overcoming inherited values through self-transformation; often translated as overhuman or superman, with significant risks of distortion.	Genealogy	Friedrich Nietzsche	will to power
+eternal recurrence	English	noun	Nietzsche's thought of the repetition of existence, appearing as cosmological hypothesis, existential test, and affirmation in different interpretive contexts.	Genealogy	Friedrich Nietzsche	amor fati
+amor fati	Latin	phrase	Love of fate: affirmation of what happens, associated especially with Nietzsche, rather than mere resigned acceptance.	Genealogy	Friedrich Nietzsche	eternal recurrence
+genealogy	English	noun	A critical historical inquiry into the contingent emergence of values, institutions, concepts, and subjects without taking their present self-descriptions at face value.	Genealogy	Friedrich Nietzsche,Michel Foucault	power-knowledge
+power-knowledge	English	noun	Foucault's analysis of the mutual implication of power relations and historically organized forms of knowing, rather than a claim that knowledge is simply false propaganda.	Poststructuralism	Michel Foucault	genealogy,discourse
+épistémè	French	noun	In Foucault, historically specific conditions governing what can count as knowledge within a period; not an individual belief system.	Poststructuralism	Michel Foucault	genealogy
+biopower	English	noun	Foucault's term for techniques through which modern power takes biological life and populations as objects of administration and regulation.	Poststructuralism	Michel Foucault	biopolitics,governmentality
+biopolitics	English	noun	Political ordering and contestation organized around life, populations, health, bodies, and biological processes; treated in divergent ways by Foucault, Agamben, and Esposito.	Political philosophy	Michel Foucault,Giorgio Agamben	biopower
+biopouvoir	French	noun	French term for biopower: forms of modern political rationality that manage individual bodies and populations as living processes.	Poststructuralism	Michel Foucault	biopower
+governmentality	English	noun	Foucault's term for the rationalities and techniques through which conduct is directed, including the governing of self and others.	Poststructuralism	Michel Foucault	biopolitics
+panopticism	English	noun	A model of disciplinary power based on asymmetrical visibility and the internalization of observation, developed by Foucault through Bentham's Panopticon.	Poststructuralism	Jeremy Bentham,Michel Foucault	governmentality
+différance	French	noun	Derrida's neologism evoking both differing and deferring, naming the non-self-present play of traces through which differences and meanings emerge.	Deconstruction	Jacques Derrida	trace,pharmakon
+deconstruction	English	noun	A practice of reading that tracks internal tensions and conceptual hierarchies enabling and destabilizing a text's apparent oppositions; not mere destruction or interpretive arbitrariness.	Deconstruction	Jacques Derrida	différance,trace
+trace	English	noun	In Derrida, the structural mark of difference and absence within what appears present; not simply a physical residue of a prior event.	Deconstruction	Jacques Derrida	différance
+pharmakon	Ancient Greek	noun	A Greek word associated with remedy and poison, central to Derrida's reading of Plato's Phaedrus as resisting simple oppositional translation.	Deconstruction	Plato,Jacques Derrida	différance
+supplement	English	noun	In Derrida, what seems to be an external addition can reveal a lack or dependence in what it allegedly merely completes.	Deconstruction	Jacques Derrida	deconstruction
+logocentrism	English	noun	Derrida's term for traditions that privilege a supposedly self-present source of meaning or logos, often through the elevation of speech over writing.	Deconstruction	Jacques Derrida	phonocentrism
+phonocentrism	English	noun	Preference for speech as more immediately present to meaning than writing, critically analyzed by Derrida.	Deconstruction	Jacques Derrida	logocentrism
+rhizome	English	noun	In Deleuze and Guattari, a model of nonhierarchical multiplicity with heterogeneous connections, contrasting with arborescent organization.	Poststructuralism	Gilles Deleuze,Félix Guattari	deterritorialization
+assemblage	English	noun	A heterogeneous provisional configuration of material, social, and expressive components whose capacities arise through relations; translation of agencement involves interpretive choices.	Poststructuralism	Gilles Deleuze,Félix Guattari	agencement
+agencement	French	noun	Arrangement or fitting-together; usually translated as assemblage in Deleuze and Guattari, though the French emphasizes the active organization of relations.	Poststructuralism	Gilles Deleuze,Félix Guattari	assemblage
+deterritorialization	English	noun	A process in Deleuze and Guattari through which existing organizations or codes are displaced and recomposed; not merely geographic migration.	Poststructuralism	Gilles Deleuze,Félix Guattari	rhizome
+repetition	English	noun	In Deleuze, repetition raises questions of difference, singularity, and the conditions of novelty, rather than simple recurrence of identical instances.	Poststructuralism	Gilles Deleuze	difference
+difference	English	noun	The relation or process of differentiation; central but not univocal in Hegel, Deleuze, Derrida, and Heidegger.	Metaphysics	G. W. F. Hegel,Gilles Deleuze,Jacques Derrida	différance
+jouissance	French	noun	In Lacanian psychoanalysis, a mode of enjoyment exceeding ordinary pleasure and entangled with drive, prohibition, and repetition.	Psychoanalysis	Jacques Lacan	objet petit a
+objet petit a	French	noun	In Lacan, the object-cause of desire, not a conventional desired possession that would finally satisfy the subject.	Psychoanalysis	Jacques Lacan	jouissance,lack
+mirror stage	English	noun	Lacan's account of ego-formation through identification with an image of bodily unity, involving a structural misrecognition.	Psychoanalysis	Jacques Lacan	symbolic order
+symbolic order	English	noun	The domain of law, language, kinship, and signifying structures within Lacanian psychoanalytic theory.	Psychoanalysis	Jacques Lacan	imaginary,real
+Real	English	noun	For Lacan, what resists symbolization and cannot be assimilated to the imaginary or symbolic; not simply the empirical external world.	Psychoanalysis	Jacques Lacan	symbolic order
+Nachträglichkeit	German	noun	Afterwardness or deferred action: in Freud and later psychoanalytic theory, earlier events can acquire changed traumatic significance through subsequent experience.	Psychoanalysis	Sigmund Freud,Jean Laplanche	deferred action
+unheimlich	German	adjective	The uncanny: what is strangely familiar or unsettling through the return of what was intimate or concealed, as analyzed by Freud.	Psychoanalysis	Sigmund Freud	uncanny
+interpellation	English	noun	In Althusser, the process by which ideology 'hails' individuals as subjects, thereby shaping subject positions and social recognition.	Critical theory	Louis Althusser	ideology
+reification	English	noun	The treatment of historically formed social relations or processes as if they were fixed thing-like facts, especially in Marxist and critical theory.	Critical theory	Karl Marx,Georg Lukács,Axel Honneth	commodity fetishism
+commodity fetishism	English	noun	Marx's analysis of how social relations among producers appear as inherent relations between commodities in market exchange.	Critical theory	Karl Marx	reification
+negative dialectics	English	noun	Adorno's philosophical approach that refuses to reconcile objects completely with their conceptual identifications and attends to nonidentity.	Critical theory	Theodor W. Adorno	nonidentity
+nonidentity	English	noun	For Adorno, the remainder or resistance of the object to exhaustive identification by its concept; not a rejection of concepts as such.	Critical theory	Theodor W. Adorno	negative dialectics
+instrumental reason	English	noun	Reason reduced to optimizing means toward given ends, critically examined by Horkheimer and Adorno in relation to domination.	Critical theory	Max Horkheimer,Theodor W. Adorno	critical theory
+communicative action	English	noun	For Habermas, social interaction coordinated through participants' attempts to reach understanding by raising and redeeming validity claims.	Critical theory	Jürgen Habermas	discourse ethics
+lifeworld colonization	English	noun	Habermas's diagnosis of systemic mechanisms such as money and administration intruding upon the communicatively reproduced lifeworld.	Critical theory	Jürgen Habermas	communicative action
+intersubjectivity	English	noun	Relations among subjects involved in shared meaning and recognition, with different roles in Husserl's transcendental theory, Schutz's sociology, and critical theory.	Phenomenology	Edmund Husserl,Alfred Schutz	lifeworld,Mitsein
+social construction	English	noun	The historically situated production or maintenance of social meanings, institutions, and classifications through collective practices; not the claim that every physical fact is imaginary.	Social ontology	Peter Berger,Thomas Luckmann	intersubjectivity
+speech act	English	noun	An action performed in speaking, such as promising, ordering, or asserting; its force is not identical with the sentence's descriptive content.	Philosophy of language	J. L. Austin,John Searle	illocutionary act
+illocutionary act	English	noun	An act performed in saying something, such as warning, requesting, or asserting, distinguished from a locutionary act and its perlocutionary effects.	Philosophy of language	J. L. Austin	speech act
+language game	English	noun	Wittgenstein's term for language use embedded in forms of activity and shared practices; different games involve different rules and criteria.	Philosophy of language	Ludwig Wittgenstein	form of life
+form of life	English	noun	Wittgenstein's term for the lived human activities and practices forming the background of meaningful language use.	Philosophy of language	Ludwig Wittgenstein	language game
+private language argument	English	noun	Wittgenstein's challenge to the possibility of a language whose terms have meanings accessible only to a single person's private, uncheckable experiences.	Philosophy of language	Ludwig Wittgenstein	language game
+family resemblance	English	noun	A way of relating concepts through overlapping similarities without a single necessary and sufficient feature common to every instance.	Philosophy of language	Ludwig Wittgenstein	language game
+semantic externalism	English	noun	The thesis that some linguistic meanings or mental contents depend partly on environmental or social relations beyond the speaker's internal states.	Philosophy of language	Hilary Putnam,Tyler Burge	externalism
+reference	English	noun	The relation between an expression and what it designates or picks out, subject to competing descriptive, causal, and semantic accounts.	Philosophy of language	Gottlob Frege,Saul Kripke	rigid designator
+sense and reference	English	noun	Frege's distinction between Sinn, a mode of presentation, and Bedeutung, the referent or semantic value of an expression.	Logic	Gottlob Frege	reference
+Sinn	German	noun	Sense or mode of presentation in Frege, distinguished from Bedeutung or reference; also an ordinary German word for meaning or sense.	Logic	Gottlob Frege	Bedeutung
+Bedeutung	German	noun	Reference or denotation in some translations of Frege, but meaning or significance in ordinary German; a recurring translation problem.	Logic	Gottlob Frege	Sinn
+objectivity	English	noun	Independence from particular subjective preference or bias, or validity under publicly accountable methods, with different theoretical commitments across epistemology and phenomenology.	Epistemology	Edmund Husserl,Immanuel Kant	scientific realism
+scientific realism	English	noun	Broadly, the view that successful scientific theories aim to describe a mind-independent world, often including unobservable entities, though formulations differ.	Philosophy of science	Hilary Putnam,Bas van Fraassen	anti-realism
+anti-realism	English	noun	A family of positions questioning whether truth or existence claims should exceed verification, assertibility, or other conditions in a specified domain.	Epistemology	Michael Dummett	instrumentalism
+critical realism	English	noun	In Bhaskar, a view distinguishing the real mechanisms producing events, the actual events, and empirical experiences of them, emphasizing the independence of reality from knowledge.	Philosophy of science	Roy Bhaskar	stratified ontology
+stratified ontology	English	noun	An ontology that differentiates levels or modes of reality and their dependence relations without presupposing that every level reduces to another.	Metaphysics	Nicolai Hartmann,Roy Bhaskar	critical realism,emergence
+ontic	English	adjective	Pertaining to entities and their factual determinations, in contrast with inquiries into the meaning or structure of Being as ontological.	Ontology	Martin Heidegger	ontological,ontic-ontological
+ontological	English	adjective	Pertaining to Being or basic structures of intelligibility and existence, rather than merely factual properties of entities.	Ontology	Martin Heidegger	ontic,ontological difference
+ontic-ontological	English	adjective	In Heidegger, describing Dasein's distinctive situation: as an entity, it has an understanding of Being and can pose the ontological question.	Ontology	Martin Heidegger	Dasein,ontic,ontological
+existentiell	English	adjective	Heidegger's label for concrete ways Dasein understands and chooses itself, distinguished from the existential structures investigated ontologically.	Phenomenology	Martin Heidegger	existential,Existenzialien
+existential	English	adjective	When translating Heidegger's existenzial, a structural feature of Dasein as analyzed in fundamental ontology; not simply an individual's personal crisis.	Phenomenology	Martin Heidegger	existentiell,Existenzialien
+Existenzialien	German	noun	Existentials: structures constitutive of Dasein's Being, in contrast to categories applicable to non-Dasein entities.	Phenomenology	Martin Heidegger	Dasein,existential
+facticity	English	noun	The concrete thrown character of existing within already given circumstances and meanings, distinct from a mere collection of objective facts.	Phenomenology	Martin Heidegger	Geworfenheit
+hermeneutics	English	noun	The theory and practice of interpretation; in Heidegger and Gadamer, interpretation is rooted in historicity and situated understanding.	Hermeneutics	Martin Heidegger,Hans-Georg Gadamer	hermeneutic circle
+fusion of horizons	English	noun	Gadamer's description of historically situated understanding in which interpreter and interpreted tradition transform their possibilities of meaning.	Hermeneutics	Hans-Georg Gadamer	hermeneutics,horizon
+Wirkungsgeschichte	German	noun	Effective history: in Gadamer, history's continuing influence in shaping the standpoint and prejudgments from which interpretation proceeds.	Hermeneutics	Hans-Georg Gadamer	fusion of horizons
+prejudice	English	noun	In Gadamer's hermeneutics, a prior judgment or anticipation indispensable to understanding, which can be critically revised; not necessarily unfair bias.	Hermeneutics	Hans-Georg Gadamer	Wirkungsgeschichte
+nihilism	English	noun	A family of positions or diagnoses concerning the collapse, absence, or devaluation of meanings and values; Nietzsche and existentialists use the term differently.	Existentialism	Friedrich Nietzsche,Jean-Paul Sartre	absurd
+absurd	English	noun	In Camus, the tension between a human demand for intelligibility and the world's indifference, rather than mere silliness or logical contradiction.	Existentialism	Albert Camus	revolt,nihilism
+bad faith	English	noun	Sartre's mauvaise foi: self-deception or evasion of one's freedom through identification with fixed roles or facts, despite freedom being structurally inescapable.	Existentialism	Jean-Paul Sartre	freedom,facticity
+mauvaise foi	French	noun	Bad faith: Sartre's account of a consciousness evading its own ambiguity by treating itself as fixed fact or pure transcendence.	Existentialism	Jean-Paul Sartre	bad faith
+being-for-itself	English	noun	Sartre's mode of being of consciousness, defined through self-transcendence and lack rather than inert full self-identity.	Existentialism	Jean-Paul Sartre	being-in-itself
+being-in-itself	English	noun	Sartre's mode of being of non-conscious things, characterized by self-identity and fullness, unlike the for-itself.	Existentialism	Jean-Paul Sartre	being-for-itself
+existence precedes essence	English	phrase	Sartre's claim that humans are not born with a fixed normative essence determining their life projects; it does not assert that biology or circumstances are unreal.	Existentialism	Jean-Paul Sartre	freedom,bad faith
+ethics of ambiguity	English	noun	Beauvoir's existential ethics emphasizing situated freedom, embodied interdependence, and the reciprocity of willing one's own and others' freedom.	Existentialism	Simone de Beauvoir	freedom,recognition
+alterity	English	noun	Otherness: the status of that which cannot be simply assimilated into the self or same; central in Levinas and feminist theory.	Ethics	Emmanuel Levinas,Simone de Beauvoir	face of the Other
+face of the Other	English	noun	In Levinas, the ethical encounter that interrupts the ego's sovereign grasp and places it under responsibility; not merely another person's physical facial appearance.	Ethics	Emmanuel Levinas	alterity,responsibility
+il y a	French	phrase	'There is': in Levinas, impersonal anonymous existence that can be experienced as oppressive or inescapable, not simply a statement that something exists.	Ethics	Emmanuel Levinas	alterity
+responsibility	English	noun	Ethical answerability to others; in Levinas, it is radically prior to free contractual choice and exceeds symmetrical reciprocity.	Ethics	Emmanuel Levinas	alterity
+recognition of the Other	English	noun	A complex ethical and social act of acknowledging alterity without reducing the other's standpoint or status to one's own.	Ethics	Emmanuel Levinas,Axel Honneth	alterity
