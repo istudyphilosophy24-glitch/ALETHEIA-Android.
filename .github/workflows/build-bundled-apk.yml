@@ -32,7 +32,7 @@ jobs:
           python3 - <<'PY'
           import os, sqlite3, gzip, hashlib
           source='dictionary-source/philosophia.sqlite'
-          output='app/src/main/assets/philosophia.sqlite.gz'
+          output='app/src/main/assets/philosophia.lexpack'
           expected_size=393191424
           assert os.path.getsize(source)==expected_size, "Unexpected database byte size"
           db=sqlite3.connect('file:'+source+'?mode=ro',uri=True)
@@ -76,7 +76,7 @@ jobs:
           import zipfile, os, glob, subprocess
           apk='app/build/outputs/apk/debug/app-debug.apk'
           with zipfile.ZipFile(apk) as z:
-            pack=z.getinfo('assets/philosophia.sqlite.gz')
+            pack=z.getinfo('assets/philosophia.lexpack')
             print('Embedded',pack.filename,pack.file_size,'bytes',flush=True)
             assert pack.file_size>50000000
             assert z.testzip() is None,'APK zip CRC failure'

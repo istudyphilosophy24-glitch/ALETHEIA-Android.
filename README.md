@@ -34,7 +34,7 @@ as the dictionary's other technical and general words. Definitions are
 prioritized by lexical clues but are not all manually curated.
 
 The APK carries the complete SQLite file compressed as
-`assets/philosophia.sqlite.gz`. At first launch, a simple visible status page
+`assets/philosophia.lexpack`. At first launch, a simple visible status page
 automatically unpacks it to the app's private storage and validates the data.
 This uses a **64 KiB streaming buffer** and therefore does not load 393 MB
 into RAM. Around **425 MB of additional internal storage** must be available

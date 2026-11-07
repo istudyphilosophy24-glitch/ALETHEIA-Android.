@@ -34,7 +34,7 @@ final class Dict {
         }
     }
     interface Progress { void update(int percent); }
-    static final String ASSET="philosophia.sqlite.gz";
+    static final String ASSET="philosophia.lexpack";
     static final long EXPECTED_BYTES=393191424L;
     static final int REQUIRED_SENSES=1000000;
     private static final String COLS="id,word,lang,pos,definition,tradition,source,priority";
