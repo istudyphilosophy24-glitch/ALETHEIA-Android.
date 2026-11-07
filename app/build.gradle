@@ -3,11 +3,11 @@ android {
     namespace 'org.philosophia.ereader'
     compileSdk 34
     defaultConfig {
-        applicationId 'org.philosophia.ereader'
+        applicationId 'org.philosophia.grande'
         minSdk 19
-        targetSdk 28
-        versionCode 2
-        versionName '1.1-github'
+        targetSdk 19
+        versionCode 20
+        versionName '2.0-embedded'
     }
     buildTypes { release { minifyEnabled false } }
     compileOptions {
