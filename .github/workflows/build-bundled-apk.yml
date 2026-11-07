@@ -1,0 +1,103 @@
+name: PHILOSOPHIA GRAND - Bundled Million-Entry APK
+
+on:
+  push:
+    branches: [philosophia-bundled-v2]
+    paths:
+      - '.github/workflows/build-bundled-apk.yml'
+      - 'app/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  bundled-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Checkout Android KitKat source
+        uses: actions/checkout@v4
+      - name: Retrieve proven real 1.79-million-sense dictionary
+        uses: actions/download-artifact@v4
+        with:
+          name: PHILOSOPHIA-Million-Sense-SQLite
+          run-id: 42422307149
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dictionary-source
+
+      - name: Verify real data and package into one APK asset
+        run: |
+          python3 - <<'PY'
+          import os, sqlite3, gzip, hashlib
+          source='dictionary-source/philosophia.sqlite'
+          output='app/src/main/assets/philosophia.sqlite.gz'
+          expected_size=393191424
+          assert os.path.getsize(source)==expected_size, "Unexpected database byte size"
+          db=sqlite3.connect('file:'+source+'?mode=ro',uri=True)
+          assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+          senses=int(db.execute("SELECT value FROM metadata WHERE key='sense_count'").fetchone()[0])
+          words=int(db.execute("SELECT value FROM metadata WHERE key='headword_count'").fetchone()[0])
+          curated=int(db.execute("SELECT value FROM metadata WHERE key='curated_count'").fetchone()[0])
+          assert senses==1793921 and words==1356788 and curated>=232
+          print('VERIFIED',senses,'senses',words,'headwords',curated,'curated',flush=True)
+          db.close()
+          os.makedirs(os.path.dirname(output),exist_ok=True)
+          with open(source,'rb') as src, gzip.open(output,'wb',compresslevel=6) as dst:
+            while True:
+              chunk=src.read(1<<20)
+              if not chunk:break
+              dst.write(chunk)
+          packed=os.path.getsize(output)
+          print('Compressed asset',packed,'bytes from',expected_size,flush=True)
+          assert 50000000<packed<200000000, "Compressed dictionary size unexpected"
+          PY
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle 8
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.0.2'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Install Android SDK 34
+        run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Compile one Android KitKat APK containing the full lexicon
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Verify APK asset, Android package and minimum SDK
+        run: |
+          python3 - <<'PY'
+          import zipfile, os, glob, subprocess
+          apk='app/build/outputs/apk/debug/app-debug.apk'
+          with zipfile.ZipFile(apk) as z:
+            pack=z.getinfo('assets/philosophia.sqlite.gz')
+            print('Embedded',pack.filename,pack.file_size,'bytes',flush=True)
+            assert pack.file_size>50000000
+            assert z.testzip() is None,'APK zip CRC failure'
+          aapts=glob.glob(os.path.join(os.environ['ANDROID_HOME'],'build-tools','34.0.0','aapt'))
+          assert aapts,'Android aapt missing'
+          badge=subprocess.check_output([aapts[0],'dump','badging',apk],text=True)
+          assert "sdkVersion:'19'" in badge,badge
+          assert "package: name='org.philosophia.grande'" in badge,badge
+          print('Android API 19 + complete database verified. APK bytes:',os.path.getsize(apk),flush=True)
+          PY
+      - name: Upload installable APK as GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PHILOSOPHIA-GRAND-APK-Android-4.4
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+      - name: Publish direct permanent GitHub Release APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create philosophia-grand-v2.0             'app/build/outputs/apk/debug/app-debug.apk#PHILOSOPHIA-Grand-Android-4.4-Million-Entries.apk'             --repo "$GITHUB_REPOSITORY"             --target philosophia-bundled-v2             --title 'PHILOSOPHIA GRAND 2.0 — One APK for Crema Grande Android 4.4'             --notes 'Single self-contained offline APK: 1,793,921 real definition records, 1,356,788 distinct headwords, 232 curated philosophical entries. The app unpacks the built-in SQLite database automatically on first launch. Free around 425 MB of internal storage after installing the APK. No extra file installation or network needed. Debug signed; hardware compatibility remains to be tested.'
+        continue-on-error: true
