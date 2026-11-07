@@ -1,35 +1,82 @@
-# PHILOSOPHIA · KitKat offline dictionary
+# PHILOSOPHIA GRAND — the one-APK Crema Grande dictionary
 
-**Crema Grande / Android 4.4 (API 19)** native dictionary, e-ink-first, no online runtime permission.
+An Android **4.4 KitKat (API 19)** native e-ink dictionary, designed for the
+Crema Grande. **No account, network, database file, download inside the app,
+file manager, SD-card setup, or dictionary picker.** One APK contains all the
+Wiktionary data and the curated philosophical glossary.
 
-This is a **separate GitHub branch** in the ALETHEIA-Android. repository; the main branch is untouched.
+## Download a ready-to-install APK
 
-## Download the APK
-Open this repository's **Actions** tab. Select **PHILOSOPHIA KitKat APK** and open its newest successful run for the \`philosophia-kitkat\` branch. Download **PHILOSOPHIA-Android-4.4-APK**; extract the APK from the downloaded artifact ZIP, copy the APK to your Crema Grande, and install it. Device must permit installation from unknown sources. This is a debug-signed sideload APK, not a Play Store package.
+After the **PHILOSOPHIA GRAND — Bundled Million-Entry APK** build completes,
+open [Releases](https://github.com/istudyphilosophy24-glitch/ALETHEIA-Android./releases)
+and select **PHILOSOPHIA GRAND 2.0 — Android KitKat**.
+Download `PHILOSOPHIA-Grand-Android-4.4-Million-Entries.apk` directly.
 
-## Download the dictionary pack
-The **Build million-sense offline database** workflow downloads open Wiktionary extraction data and generates **PHILOSOPHIA-Million-Sense-SQLite** as a downloadable GitHub Actions artifact. **Check the workflow result first**: only a successful run actually produces the million-sense database. An artifact is available only for its retention period. The generated \`philosophia.sqlite\` is an offline SQLite 3 file, not an APK.
+If GitHub Releases publishing is blocked by repository settings, open **Actions**,
+select **PHILOSOPHIA GRAND — Bundled Million-Entry APK**, and download
+`PHILOSOPHIA-GRAND-APK-Android-4.4` from the newest *successful* run.
+You must unzip the Actions artifact before transferring the APK.
 
-The app ships with a small original technical-philosophy starter pack; it does **not** ship with a million entries. Counts are computed from actual data rows, and one row means one *sense*, not necessarily one unique headword. The full build enforces ≥1,000,000 real sense records. Kaikki's upstream postprocessed data link is deprecated and may eventually disappear; the pipeline will fail instead of inventing entries if that happens.
+**This APK is a debug-signed sideload build.** You may need to allow
+'Unknown sources' in Android settings. Since it uses a new Android package ID
+(`org.philosophia.grande`), it does not conflict with the earlier
+`org.philosophia.ereader` development build. For a future update, keep the
+same signing key; this GitHub debug key is not guaranteed stable across runs.
 
-## Install on Crema Grande (Android 4.4)
-1. Install the APK once.
-2. Download the dictionary artifact on a PC or phone, then transfer it by USB or SD card.
-3. Inside PHILOSOPHIA tap **INSTALL DICTIONARY** and choose a raw \`.sqlite\` file OR its ZIP archive. The installer verifies its schema and integrity before replacing the old pack. It opens KitKat's \`ACTION_GET_CONTENT\` picker: a file manager with picker support must be present.
-4. **Space-saving alternative for huge packs:** extract the Actions artifact on a PC and copy just \`philosophia.sqlite\` to \`/sdcard/PHILOSOPHIA/philosophia.sqlite\`. Launch PHILOSOPHIA and select **RELOAD**. A known external-card path is also checked. This method avoids doubling storage during an import.
+## One-time first launch
 
-The database is **not** something to install by tapping it as an APK. The PHILOSOPHIA app imports or opens it.
+The verified archive contains **1,793,921 distinct sense records and
+1,356,788 distinct language+headword combinations**. The uncompressed SQLite
+database is **393,191,424 bytes**, built by the previous successful GitHub
+workflow run 42422307149 using Wiktionary/Wiktextract/Kaikki extraction data.
+The database contains **232 curated editorial philosophical terms** as well
+as the dictionary's other technical and general words. Definitions are
+prioritized by lexical clues but are not all manually curated.
 
-## Compatibility and honesty
-- Android app uses native Java, minSdkVersion 19, SQLite B-tree indexes, and no network, FTS5, or AndroidX.
-- Pack uses only SQLite 3.7-era features supported by Android KitKat. Encoding UTF-8, journal DELETE, 4096 byte pages.
-- Importer accepts \`.sqlite\` or ZIP (including zipped GitHub Actions artifacts).
-- Device RAM is conserved by limiting SQLite results to 60 per query.
-- Verified: database generator on sample input, parser/SQLite schema. **A physical Crema Grande install remains unverified until tested on-device.** GitHub Actions must succeed for APK validity to be established.
-- This is not affiliated with Crema's manufacturer.
+The APK carries the complete SQLite file compressed as
+`assets/philosophia.sqlite.gz`. At first launch, a simple visible status page
+automatically unpacks it to the app's private storage and validates the data.
+This uses a **64 KiB streaming buffer** and therefore does not load 393 MB
+into RAM. Around **425 MB of additional internal storage** must be available
+*after installing the APK*. The bundled asset is already in the APK; no
+second download is required. Future launches open the private SQLite file
+directly. When the database cannot be installed, the app shows an actionable
+error and retry control; it does not silently fall back to a tiny glossary.
 
-## Building
-The Actions APK workflow runs Python 3 to create a curated demo asset and builds Gradle \`:app:assembleDebug\` using JDK 17 and Android SDK 34. To build locally: generate assets with \`python3 tools/build_pack.py --demo --output app/src/main/assets/demo.sqlite\`, then build with Gradle 8.0.2 + Android Gradle Plugin 8.1.4.
+### E-ink / KitKat choices
+- No Internet permission, no analytics, no AndroidX or Google services.
+- minSdk 19, targetSdk 19, native Java and Android's SQLite engine.
+- No file-picker or legacy external-storage permission needed.
+- Grayscale, high contrast, still screens and infrequent setup updates.
+- Index-based search with LIMIT 60 instead of loading all results.
+- Definitions, philosophical filter, bookmarks, adjustable reading type.
+- Compatible SQLite schema uses B-tree indexing and Android 4.4-era SQL.
+- All on-device data operations are offline.
 
-## Licenses
-App source: MIT. Wiktionary-origin database material: CC BY-SA and/or GFDL according to source licenses. Preserve attribution in redistribution; see \`DATA_LICENSE.md\`.
+## Rebuild with GitHub Actions
+
+The workflow file is
+`.github/workflows/build-bundled-apk.yml`. It downloads the **verified**
+large SQLite artifact produced in GitHub Actions run 42422307149, validates
+the count, compresses the database into the APK assets, compiles with Gradle
+8.0.2 and Android Gradle Plugin 8.1.4, checks APK contents and minSdkVersion,
+then uploads a downloadable APK artifact and attempts to publish a stable
+GitHub release.
+
+This workflow currently depends on the earlier GitHub Actions database
+artifact remaining available. Once that artifact expires, re-run the
+`Build million-sense offline database` workflow on the
+`philosophia-kitkat` branch and change the `run-id` in the bundled
+workflow to the fresh successful run. Never silently substitute a dummy DB.
+
+## Licensing and limitations
+
+App source: MIT. The included Wiktionary-origin dictionary must retain
+appropriate Wiktionary/Wiktextract and contributor attribution; refer to
+`DATA_LICENSE.md` and the About screen.
+
+**GitHub Actions build success is not a physical Crema Grande installation
+test.** The APK is intended for Android 4.4, but actual sideload installation
+and first-launch unpacking on the specific reader should be verified before
+relying on it. The large compressed APK plus extracted DB require free
+internal storage, especially if other books are present.
