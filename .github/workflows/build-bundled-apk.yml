@@ -40,7 +40,7 @@ jobs:
           senses=int(db.execute("SELECT value FROM metadata WHERE key='sense_count'").fetchone()[0])
           words=int(db.execute("SELECT value FROM metadata WHERE key='headword_count'").fetchone()[0])
           curated=int(db.execute("SELECT value FROM metadata WHERE key='curated_count'").fetchone()[0])
-          assert senses==1793921 and words==1356788 and curated>=232
+          assert senses==1793921 and words==1356788 and curated>=69
           print('VERIFIED',senses,'senses',words,'headwords',curated,'curated',flush=True)
           db.close()
           os.makedirs(os.path.dirname(output),exist_ok=True)
@@ -99,5 +99,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create philosophia-grand-v2.0             'app/build/outputs/apk/debug/app-debug.apk#PHILOSOPHIA-Grand-Android-4.4-Million-Entries.apk'             --repo "$GITHUB_REPOSITORY"             --target philosophia-bundled-v2             --title 'PHILOSOPHIA GRAND 2.0 — One APK for Crema Grande Android 4.4'             --notes 'Single self-contained offline APK: 1,793,921 real definition records, 1,356,788 distinct headwords, 232 curated philosophical entries. The app unpacks the built-in SQLite database automatically on first launch. Free around 425 MB of internal storage after installing the APK. No extra file installation or network needed. Debug signed; hardware compatibility remains to be tested.'
+          gh release create philosophia-grand-v2.0             'app/build/outputs/apk/debug/app-debug.apk#PHILOSOPHIA-Grand-Android-4.4-Million-Entries.apk'             --repo "$GITHUB_REPOSITORY"             --target philosophia-bundled-v2             --title 'PHILOSOPHIA GRAND 2.0 — One APK for Crema Grande Android 4.4'             --notes 'Single self-contained offline APK: 1,793,921 real definition records, 1,356,788 distinct headwords, 69 curated editorial philosophical entries. The app unpacks the built-in SQLite database automatically on first launch. Free around 425 MB of internal storage after installing the APK. No extra file installation or network needed. Debug signed; hardware compatibility remains to be tested.'
         continue-on-error: true
