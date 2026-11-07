@@ -1,0 +1,42 @@
+name: PHILOSOPHIA KitKat APK
+on:
+  push:
+    branches: [philosophia-kitkat]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify source and generate bundled starter database
+        run: |
+          python3 tools/build_pack.py --demo --output app/src/main/assets/demo.sqlite
+          python3 -m unittest discover -s tests -v
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.0.2'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Compile APK targeting Android 4.4 minimum
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PHILOSOPHIA-Android-4.4-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PHILOSOPHIA-Starter-SQLite
+          path: app/src/main/assets/demo.sqlite
+          retention-days: 30

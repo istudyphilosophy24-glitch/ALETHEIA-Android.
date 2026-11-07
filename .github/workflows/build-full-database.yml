@@ -1,0 +1,31 @@
+name: Build million-sense offline database
+on:
+  push:
+    branches: [philosophia-kitkat]
+    paths: ['.github/workflows/build-full-database.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dictionary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Stream Wiktionary data into old-Android-compatible SQLite
+        run: |
+          mkdir -p dist
+          python3 tools/build_pack.py \
+            --input 'https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl' \
+            --output 'dist/philosophia.sqlite' --min-senses 1000000
+          python3 -c "import sqlite3; c=sqlite3.connect('dist/philosophia.sqlite'); print(c.execute('PRAGMA integrity_check').fetchone()); print(c.execute('SELECT * FROM metadata').fetchall())"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PHILOSOPHIA-Million-Sense-SQLite
+          path: dist/philosophia.sqlite
+          compression-level: 1
+          retention-days: 30
+          if-no-files-found: error

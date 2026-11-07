@@ -1,0 +1,9 @@
+*.sqlite
+*.db
+.gradle/
+build/
+app/build/
+__pycache__/
+*.pyc
+.local/
+dist/

@@ -1,46 +1,35 @@
-# ALETHEIA Native v0.5 — *Being and Time* philosophical laboratory
+# PHILOSOPHIA · KitKat offline dictionary
 
-**Native Android Java app** built with Gradle and GitHub Actions. Offline-first, with no server-side collection of imported primary texts.
+**Crema Grande / Android 4.4 (API 19)** native dictionary, e-ink-first, no online runtime permission.
 
-## Installation
-1. Open [GitHub Actions](https://github.com/istudyphilosophy24-glitch/ALETHEIA-Android./actions).
-2. Select the latest successful **Build ALETHEIA Native APK** run.
-3. Download the `ALETHEIA-debug-APK` artifact; extract `app-debug.apk` from the ZIP.
-4. Sideload the APK on Android 8 or later. This is a *debug* test build, not a production Play Store package.
+This is a **separate GitHub branch** in the ALETHEIA-Android. repository; the main branch is untouched.
 
-**Debug signing warning:** GitHub Actions builds may have different transient debug signatures. If Android refuses to update an earlier ALETHEIA APK, it may be necessary to uninstall the previous test build, **which erases that build's private local data**. Use the Scholar's Workspace > **Export my notebook** first if available. A production release needs persistent private signing credentials.
+## Download the APK
+Open this repository's **Actions** tab. Select **PHILOSOPHIA KitKat APK** and open its newest successful run for the \`philosophia-kitkat\` branch. Download **PHILOSOPHIA-Android-4.4-APK**; extract the APK from the downloaded artifact ZIP, copy the APK to your Crema Grande, and install it. Device must permit installation from unknown sources. This is a debug-signed sideload APK, not a Play Store package.
 
-## Great Reader
-- Opens immediately to an offline original study guide for all 83 published sections, with distinct orientations and questions.
-- Imports legally acquired **searchable PDF**, **DRM-free EPUB**, or **UTF-8 TXT** from device storage or Google Drive's Android document provider.
-- Separate **Macquarrie–Robinson** and **Stambaugh** translation slots; independent paragraph paging, adjustable type, text selection/copy, bookmarking, offline notes and on-device search.
-- Comparative Translation Laboratory shows the two imported texts and permits independent paragraph-index adjustment; the text alignment is *not* verified.
-- Selected close-reading analyses and objections plus section-level study orientation for every section. Not every paragraph of the full copyrighted texts has been independently annotated.
-- Scanned PDF without searchable text will require separate text recognition; DRM-locked ebooks are not imported.
+## Download the dictionary pack
+The **Build million-sense offline database** workflow downloads open Wiktionary extraction data and generates **PHILOSOPHIA-Million-Sense-SQLite** as a downloadable GitHub Actions artifact. **Check the workflow result first**: only a successful run actually produces the million-sense database. An artifact is available only for its retention period. The generated \`philosophia.sqlite\` is an offline SQLite 3 file, not an APK.
 
-**The complete English translations are not bundled.** Your personal lawful possession of a licensed edition does not by itself provide permission to redistribute the text through this public repository. Import your own copy through the Reader and it will be stored locally in the app.
+The app ships with a small original technical-philosophy starter pack; it does **not** ship with a million entries. Counts are computed from actual data rows, and one row means one *sense*, not necessarily one unique headword. The full build enforces ≥1,000,000 real sense records. Kaikki's upstream postprocessed data link is deprecated and may eventually disappear; the pipeline will fail instead of inventing entries if that happens.
 
-## Audio
-- Speech through Android's **TextToSpeech** engine, user-selectable installed engine, speed control and audio test, with a queued play request during engine initialization.
-- Separate ElevenReader **share/handoff** workflow and **Copy for ElevenReader > Write text** fallback.
-- A system settings selection does not guarantee ElevenReader can service Android TTS API calls. Its own import and narration capabilities are distinct from Android's TTS service. The app does not bypass subscriptions or usage limits.
+## Install on Crema Grande (Android 4.4)
+1. Install the APK once.
+2. Download the dictionary artifact on a PC or phone, then transfer it by USB or SD card.
+3. Inside PHILOSOPHIA tap **INSTALL DICTIONARY** and choose a raw \`.sqlite\` file OR its ZIP archive. The installer verifies its schema and integrity before replacing the old pack. It opens KitKat's \`ACTION_GET_CONTENT\` picker: a file manager with picker support must be present.
+4. **Space-saving alternative for huge packs:** extract the Actions artifact on a PC and copy just \`philosophia.sqlite\` to \`/sdcard/PHILOSOPHIA/philosophia.sqlite\`. Launch PHILOSOPHIA and select **RELOAD**. A known external-card path is also checked. This method avoids doubling storage during an import.
 
-## Learning environments
-- 83 original thematic section navigation entries and unique section orientations.
-- 46 concept glossary entries.
-- Native Canvas ontological atlas, graphical equipment, anxiety and temporality demonstrations.
-- 12 varied argument reconstruction encounters, randomized display positions, native vector graphics and saved encounter progress.
-- Hermeneutic Tutor with offline structured questions, not a generative live AI.
-- Scholar's Workspace with local notes, section completion, annotation and **JSON export/restore** for notebook and progress.
+The database is **not** something to install by tapping it as an APK. The PHILOSOPHIA app imports or opens it.
+
+## Compatibility and honesty
+- Android app uses native Java, minSdkVersion 19, SQLite B-tree indexes, and no network, FTS5, or AndroidX.
+- Pack uses only SQLite 3.7-era features supported by Android KitKat. Encoding UTF-8, journal DELETE, 4096 byte pages.
+- Importer accepts \`.sqlite\` or ZIP (including zipped GitHub Actions artifacts).
+- Device RAM is conserved by limiting SQLite results to 60 per query.
+- Verified: database generator on sample input, parser/SQLite schema. **A physical Crema Grande install remains unverified until tested on-device.** GitHub Actions must succeed for APK validity to be established.
+- This is not affiliated with Crema's manufacturer.
 
 ## Building
-Requires Java 17, Gradle 8.9 and Android SDK 35. The source is compiled by `.github/workflows/build-apk.yml` on every main-branch push. Build locally:
+The Actions APK workflow runs Python 3 to create a curated demo asset and builds Gradle \`:app:assembleDebug\` using JDK 17 and Android SDK 34. To build locally: generate assets with \`python3 tools/build_pack.py --demo --output app/src/main/assets/demo.sqlite\`, then build with Gradle 8.0.2 + Android Gradle Plugin 8.1.4.
 
-```bash
-gradle :app:assembleDebug
-```
-
-Output: `app/build/outputs/apk/debug/app-debug.apk`.
-
-## Remaining limitations
-This is a substantial native beta, not a fully peer-reviewed edition. Full philological H-page alignment, paragraph-specific research commentary for every paragraph, conversational AI, more labs, comprehensive Android device testing, and durable release signing still need work. Imported text never leaves the application automatically; Android TTS engines and external ElevenReader sharing may transmit selected passages under those providers' terms.
+## Licenses
+App source: MIT. Wiktionary-origin database material: CC BY-SA and/or GFDL according to source licenses. Preserve attribution in redistribution; see \`DATA_LICENSE.md\`.
