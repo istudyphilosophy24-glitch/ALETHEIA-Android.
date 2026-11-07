@@ -25,7 +25,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.0.2'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - name: Compile APK targeting Android 4.4 minimum
         run: gradle --no-daemon :app:assembleDebug
