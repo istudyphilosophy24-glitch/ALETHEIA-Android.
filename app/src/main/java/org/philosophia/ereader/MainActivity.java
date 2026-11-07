@@ -36,7 +36,6 @@ import java.util.Set;
 
 /** Native no-animation UI designed for old Crema e-ink readers. */
 public final class MainActivity extends Activity {
-    private static final int PICK_PACK=1944;
     private Dict dict;
     private SharedPreferences prefs;
     private final Handler handler=new Handler();
@@ -51,7 +50,6 @@ public final class MainActivity extends Activity {
     private boolean focused=false;
     private boolean detail=false;
     private Dict.Entry current;
-    private ProgressDialog progress;
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
@@ -59,7 +57,9 @@ public final class MainActivity extends Activity {
         prefs=getSharedPreferences("paper",MODE_PRIVATE);
         font=prefs.getInt("font",19);focused=prefs.getBoolean("philosophy",false);
         dict=new Dict(this);
-        showSearch();
+        showLoading();
+        startDictionary();
+
     }
     @Override protected void onDestroy() {
         if(pending!=null)handler.removeCallbacks(pending);
@@ -68,6 +68,53 @@ public final class MainActivity extends Activity {
     }
     @Override public void onBackPressed() {
         if(detail)showSearch();else super.onBackPressed();
+    }
+    private TextView loadingLine;
+    private void showLoading() {
+        LinearLayout page=newPage();
+        headline(page,"A complete dictionary, built into the application");
+        page.addView(text("Preparing 1,793,921 definitions for offline reading.",19,true));
+        page.addView(text("The first launch automatically unpacks the dictionary from the APK into the app's private storage. No downloads, files, or Internet access are needed. This one-time process requires about 425 MB free space.",16,false));
+        loadingLine=text("Checking built-in database...",16,true);
+        page.addView(loadingLine);
+    }
+    private void startDictionary() {
+        new Thread(new Runnable(){
+            @Override public void run(){
+                Exception failure=null;
+                try {
+                    dict.prepareEmbedded(new Dict.Progress(){
+                        @Override public void update(final int percent){
+                            if(percent!=100 && percent%5!=0)return;
+                            runOnUiThread(new Runnable(){
+                                @Override public void run(){
+                                    if(!isFinishing() && loadingLine!=null)
+                                        loadingLine.setText(percent==100 ?
+                                            "Dictionary ready." : "Preparing offline database: "+percent+"%");
+                                }
+                            });
+                        }
+                    });
+                } catch(Exception e){failure=e;}
+                final Exception problem=failure;
+                runOnUiThread(new Runnable(){
+                    @Override public void run(){
+                        if(isFinishing())return;
+                        if(problem==null){loadingLine=null;showSearch();}
+                        else showSetupError(problem.getMessage());
+                    }
+                });
+            }
+        },"embedded-philosophia-setup").start();
+    }
+    private void showSetupError(String reason) {
+        LinearLayout page=newPage();
+        headline(page,"Unable to prepare offline database");
+        page.addView(text(reason==null?"The bundled data could not be opened.":reason,17,false));
+        page.addView(button("RETRY",new Runnable(){
+            @Override public void run(){showLoading();startDictionary();}
+        }));
+        page.addView(text("Please make sure the APK is complete and sufficient device storage is free. No external dictionary file is required.",14,false));
     }
     private int dp(int value) {
         return (int)(value*getResources().getDisplayMetrics().density+0.5f);
@@ -132,12 +179,7 @@ public final class MainActivity extends Activity {
                 showSearch();
             }
         }),3);
-        distribute(buttons,button("INSTALL",new Runnable(){
-            @Override public void run(){choosePack();}
-        }),2);
-        distribute(buttons,button("RELOAD",new Runnable(){
-            @Override public void run(){dict.open();showSearch();}
-        }),2);
+
         page.addView(buttons);rule(page);
         status=text("",12,false);page.addView(status);
         resultsList=new ListView(this);
@@ -189,7 +231,7 @@ public final class MainActivity extends Activity {
                 adapter.add(e.word+"  ["+e.language+"]\n"+description);
             }
             if(query.trim().length()==0)
-                status.setText((dict.starter?"STARTER":"OFFLINE PACK")+" · "+
+                status.setText("BUNDLED OFFLINE LEXICON"+" · "+
                    dict.meta("sense_count")+" definitions · "+
                    dict.meta("headword_count")+" distinct headwords");
             else status.setText(displayed.size()+" definitions shown");
@@ -268,50 +310,14 @@ public final class MainActivity extends Activity {
         root.addView(button("‹ BACK",new Runnable(){@Override public void run(){showSearch();}}));
         ScrollView scroll=new ScrollView(this);LinearLayout content=column();
         content.addView(text("Running Android 4.4 compatible code (API 19 minimum).",15,false));
-        content.addView(text("Loaded: "+(dict.starter?"STARTER":"IMPORTED / SHARED STORAGE"),15,true));
+        content.addView(text("Loaded: COMPLETE BUNDLED DICTIONARY",15,true));
         content.addView(text("Definitions: "+dict.meta("sense_count")+
             "\nUnique language-headwords: "+dict.meta("headword_count"),16,false));
         content.addView(text("File: "+dict.path,12,false));
-        content.addView(text("INSTALL accepts a raw .sqlite file or a ZIP archive with .sqlite inside. A file-picker app is required. The database is never installed as an APK. You can instead copy philosophia.sqlite into /sdcard/PHILOSOPHIA and tap RELOAD on the home screen.",14,false));
+        content.addView(text("The full dictionary is packaged inside this APK. It is automatically prepared during first launch and requires no separate download, account, Internet connection, or file manager.",14,false));
         if(dict.warning.length()>0)content.addView(text("WARNING: "+dict.warning,13,false));
         content.addView(text("All searches work without Internet, trackers, sign-in, or Google services.",13,false));
         scroll.addView(content);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-    }
-    private void choosePack() {
-        Intent intent=new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);
-        try {startActivityForResult(Intent.createChooser(intent,
-                 "Choose .sqlite or ZIP dictionary"),PICK_PACK);}
-        catch(Exception e){
-            new AlertDialog.Builder(this).setTitle("File picker not installed")
-                .setMessage("Use the manual /sdcard/PHILOSOPHIA/philosophia.sqlite route.")
-                .setPositiveButton("OK",null).show();
-        }
-    }
-    @Override protected void onActivityResult(int code,int result,Intent data) {
-        super.onActivityResult(code,result,data);
-        if(code!=PICK_PACK||result!=RESULT_OK||data==null||data.getData()==null)return;
-        final Uri uri=data.getData();
-        progress=ProgressDialog.show(this,"Importing database",
-             "Copying and checking dictionary; larger packs may take longer.",true,false);
-        new Thread(new Runnable(){
-            @Override public void run() {
-                File output=null;String error=null;
-                try{output=dict.stage(uri);}catch(Exception e){error=e.getMessage();}
-                final File staged=output;final String problem=error;
-                runOnUiThread(new Runnable(){
-                    @Override public void run() {
-                        if(progress!=null){progress.dismiss();progress=null;}
-                        if(isFinishing())return;
-                        if(problem!=null){message("Import failed",problem+"\nYour old pack is unchanged.");return;}
-                        try {
-                            dict.activate(staged);showSearch();
-                            message("Dictionary installed",dict.meta("sense_count")+" definitions are ready offline.");
-                        }catch(Exception e){message("Import failed",e.getMessage());}
-                    }
-                });
-            }
-        },"offline-dictionary-installer").start();
     }
     private void message(String title,String message){
         new AlertDialog.Builder(this).setTitle(title).setMessage(message)
