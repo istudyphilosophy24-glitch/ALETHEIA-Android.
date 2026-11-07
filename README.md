@@ -29,7 +29,7 @@ The verified archive contains **1,793,921 distinct sense records and
 1,356,788 distinct language+headword combinations**. The uncompressed SQLite
 database is **393,191,424 bytes**, built by the previous successful GitHub
 workflow run 42422307149 using Wiktionary/Wiktextract/Kaikki extraction data.
-The database contains **232 curated editorial philosophical terms** as well
+The database contains **69 curated editorial philosophical terms** as well
 as the dictionary's other technical and general words. Definitions are
 prioritized by lexical clues but are not all manually curated.
 
