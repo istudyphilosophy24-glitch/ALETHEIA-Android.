@@ -24,9 +24,11 @@ public final class ReaderActivity extends Activity {
     private LinearLayout root;
     private CharSequence chapterText="";
     private final ArrayList<Integer> starts=new ArrayList<>();
-    private int chapter=0,pageIndex=0,fontSp=21,marginDp=20;
+    private static final int PICK_FONT=207;
+    private int chapter=0,pageIndex=0,fontSp=21,marginDp=20,indentDp=14,paragraphGapDp=7;
     private float lineSpacing=1.3f;
-    private boolean footerVisible=true,serif=true,loading=false;
+    private String fontKey="sys:serif";
+    private boolean footerVisible=true,boldText=false,loading=false;
     private android.content.SharedPreferences prefs;
     private boolean started=false;
     private int layoutWidth,layoutHeight;
@@ -36,7 +38,10 @@ public final class ReaderActivity extends Activity {
         db=new BookStore(this);String id=getIntent().getStringExtra("bookId");record=db.byId(id==null?"":id);
         if(record==null){finish();return;}
         prefs=getSharedPreferences("reader",MODE_PRIVATE);fontSp=prefs.getInt("font",21);marginDp=prefs.getInt("margin",20);
-        lineSpacing=prefs.getFloat("spacing",1.3f);footerVisible=prefs.getBoolean("footer",true);serif=prefs.getBoolean("serif",true);
+        lineSpacing=prefs.getFloat("spacing",1.3f);footerVisible=prefs.getBoolean("footer",true);
+        indentDp=prefs.getInt("indent",14);paragraphGapDp=prefs.getInt("paragraph_gap",7);
+        fontKey=prefs.getString("font_key",prefs.getBoolean("serif",true)?"sys:serif":"sys:sans-serif");
+        boldText=prefs.getBoolean("font_bold",false);
         try{epub=new EpubBook(new File(record.path));}catch(Exception ex){error("Cannot open this book",ex.getMessage());return;}
         root=Ui.column(this);page=new TextView(this);page.setTextColor(Color.BLACK);page.setBackgroundColor(Color.WHITE);
         page.setGravity(Gravity.TOP|Gravity.LEFT);page.setIncludeFontPadding(false);page.setTextIsSelectable(false);
@@ -56,7 +61,7 @@ public final class ReaderActivity extends Activity {
         });
     }
     private void applyStyle(){
-        page.setTypeface(Typeface.create(serif?"serif":"sans-serif",Typeface.NORMAL));
+        page.setTypeface(FontCatalog.load(fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));
         page.setTextSize(TypedValue.COMPLEX_UNIT_SP,fontSp);page.setLineSpacing(0,lineSpacing);
         int m=Ui.dp(this,marginDp);page.setPadding(m,Ui.dp(this,marginDp),m,Ui.dp(this,marginDp));
         footer.setVisibility(footerVisible?View.VISIBLE:View.GONE);
@@ -68,8 +73,8 @@ public final class ReaderActivity extends Activity {
         chapter=newChapter;
         try {
             String markup=epub.chapter(chapter);
-            if(record.format.equals("txt"))chapterText=markup.replace("\r\n","\n");
-            else chapterText=renderHtml(markup);
+            CharSequence original=record.format.equals("txt")?markup.replace("\r\n","\n"):renderHtml(markup);
+            chapterText=TextLayoutStyler.style(original,Ui.dp(this,indentDp),Ui.dp(this,paragraphGapDp),record.format.equals("txt"));
             starts.clear();starts.add(0);pageIndex=0;
             layoutWidth=page.getWidth()-page.getPaddingLeft()-page.getPaddingRight();
             layoutHeight=page.getHeight()-page.getPaddingTop()-page.getPaddingBottom();
@@ -178,17 +183,77 @@ public final class ReaderActivity extends Activity {
     private void marks(){ArrayList<BookStore.Mark> list=db.marks(record.id);if(list.isEmpty()){new AlertDialog.Builder(this).setMessage("No bookmarks yet.").setPositiveButton("OK",null).show();return;}
         String[] titles=new String[list.size()];for(int i=0;i<list.size();i++)titles[i]=list.get(i).label;
         new AlertDialog.Builder(this).setTitle("Bookmarks").setItems(titles,(d,i)->loadChapter(list.get(i).chapter,list.get(i).offset)).setNegativeButton("Close",null).show();}
+    /** Full-size, native KitKat-friendly reading controls. Apply once to avoid constant E Ink redraws. */
     private void typography(){
-        new AlertDialog.Builder(this).setTitle("Typography & layout").setItems(new String[]{
-            "Smaller font ("+fontSp+" sp)","Larger font ("+fontSp+" sp)","Line spacing ("+lineSpacing+"×)",
-            "Typeface: "+(serif?"Serif":"Sans"),"Margins ("+marginDp+" dp)","Show footer: "+(footerVisible?"Yes":"No")},(d,which)->{
-            if(which==0)fontSp=Math.max(13,fontSp-1);if(which==1)fontSp=Math.min(35,fontSp+1);
-            if(which==2)lineSpacing=lineSpacing>=1.59f?1.15f:(lineSpacing<1.25f?1.3f:1.6f);
-            if(which==3)serif=!serif;if(which==4)marginDp=marginDp>=30?10:marginDp+5;
-            if(which==5)footerVisible=!footerVisible;
-            prefs.edit().putInt("font",fontSp).putInt("margin",marginDp).putFloat("spacing",lineSpacing)
-                .putBoolean("serif",serif).putBoolean("footer",footerVisible).apply();reflow();
-        }).setNegativeButton("Done",null).show();
+        final ScrollView scroller=new ScrollView(this);
+        final LinearLayout controls=Ui.column(this);
+        controls.setPadding(Ui.dp(this,19),Ui.dp(this,10),Ui.dp(this,19),Ui.dp(this,12));
+        scroller.addView(controls);
+        TextView hint=Ui.text(this,"Book typography · settings apply when you tap Apply",13,false);
+        hint.setTextColor(Ui.GRAY);controls.addView(hint);
+        TextView faceTitle=Ui.text(this,"TYPEFACE",14,true);faceTitle.setPadding(0,Ui.dp(this,17),0,Ui.dp(this,5));controls.addView(faceTitle);
+        final ArrayList<FontCatalog.Entry> fonts=FontCatalog.list(this);
+        final Spinner fontSelect=new Spinner(this);
+        ArrayAdapter<FontCatalog.Entry> spinnerAdapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,fonts);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        fontSelect.setAdapter(spinnerAdapter);int chosen=0;
+        for(int i=0;i<fonts.size();i++)if(fonts.get(i).key.equals(fontKey)){chosen=i;break;}
+        fontSelect.setSelection(chosen);controls.addView(fontSelect,new LinearLayout.LayoutParams(-1,Ui.dp(this,49)));
+        final CheckBox heavier=new CheckBox(this);heavier.setText("Heavier text / bold");heavier.setChecked(boldText);
+        controls.addView(heavier);
+        final SeekBar size=slider(controls,"Font size",14,36,fontSp,"sp");
+        final SeekBar lines=slider(controls,"Line spacing",100,190,Math.round(lineSpacing*100f),"%");
+        final SeekBar indents=slider(controls,"First-line paragraph indent",0,40,indentDp,"dp");
+        final SeekBar paragraph=slider(controls,"Space after paragraphs",0,24,paragraphGapDp,"dp");
+        final SeekBar margins=slider(controls,"Page margins",4,40,marginDp,"dp");
+        final CheckBox foot=new CheckBox(this);foot.setText("Show chapter / page footer");foot.setChecked(footerVisible);
+        controls.addView(foot);
+        TextView note=Ui.text(this,"EPUB publisher styles may differ. Full justified alignment isn't available in Android 4.4's native text layout.",12,false);
+        note.setTextColor(Ui.GRAY);note.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,10));controls.addView(note);
+        new AlertDialog.Builder(this).setTitle("FOLIO · Type & spacing").setView(scroller)
+            .setNegativeButton("Cancel",null)
+            .setNeutralButton("Import TTF / OTF",(d,w)->{
+                Intent i=new Intent(this,PickerActivity.class);i.putExtra("mode","font");startActivityForResult(i,PICK_FONT);
+            })
+            .setPositiveButton("Apply",(d,w)->{
+                FontCatalog.Entry selected=(FontCatalog.Entry)fontSelect.getSelectedItem();
+                if(selected!=null)fontKey=selected.key;
+                boldText=heavier.isChecked();fontSp=14+size.getProgress();
+                lineSpacing=(100+lines.getProgress())/100f;
+                indentDp=indents.getProgress();paragraphGapDp=paragraph.getProgress();
+                marginDp=4+margins.getProgress();footerVisible=foot.isChecked();
+                saveTypography();reflow();
+            }).show();
+    }
+    private SeekBar slider(LinearLayout into,String label,int low,int high,int current,String unit){
+        final TextView title=Ui.text(this,label+"  ·  "+current+unit,15,false);
+        title.setPadding(0,Ui.dp(this,12),0,0);into.addView(title);
+        SeekBar control=new SeekBar(this);control.setMax(high-low);control.setProgress(Math.min(high-low,Math.max(0,current-low)));
+        control.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            @Override public void onProgressChanged(SeekBar b,int progress,boolean fromUser){
+                title.setText(label+"  ·  "+(low+progress)+unit);
+            }
+            @Override public void onStartTrackingTouch(SeekBar b){}
+            @Override public void onStopTrackingTouch(SeekBar b){}
+        });
+        into.addView(control,new LinearLayout.LayoutParams(-1,Ui.dp(this,49)));
+        return control;
+    }
+    private void saveTypography(){
+        prefs.edit().putInt("font",fontSp).putInt("margin",marginDp).putFloat("spacing",lineSpacing)
+            .putInt("indent",indentDp).putInt("paragraph_gap",paragraphGapDp)
+            .putString("font_key",fontKey).putBoolean("font_bold",boldText)
+            .putBoolean("footer",footerVisible).apply();
+    }
+    @Override protected void onActivityResult(int request,int result,Intent data){
+        super.onActivityResult(request,result,data);
+        if(request!=PICK_FONT||result!=RESULT_OK||data==null)return;
+        String path=data.getStringExtra("path");if(path==null)return;
+        try{File file=FontCatalog.install(this,new File(path));
+            fontKey="file:"+file.getAbsolutePath();saveTypography();reflow();
+            Toast.makeText(this,"Typeface added: "+file.getName(),Toast.LENGTH_LONG).show();
+        }catch(Exception failure){new AlertDialog.Builder(this).setTitle("Cannot add font")
+            .setMessage(failure.getMessage()).setPositiveButton("OK",null).show();}
     }
     @Override public boolean onKeyDown(int code,KeyEvent e){
         if(code==KeyEvent.KEYCODE_VOLUME_DOWN||code==KeyEvent.KEYCODE_DPAD_RIGHT||code==KeyEvent.KEYCODE_PAGE_DOWN){next();return true;}

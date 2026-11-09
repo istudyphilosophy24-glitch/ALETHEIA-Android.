@@ -1,19 +1,19 @@
 # FOLIO — Offline Crema Grande Reader
 
-**Status:** Android 4.4 prototype / 0.5 source release. **Do not assume untested features are complete.**
+**Status:** Android 4.4 Shelf Edition / 0.6 source release. **Do not assume untested features are complete.**
 
 FOLIO is a Java-only, offline, monochrome EPUB/TXT reader for older E Ink devices including the Crema Grande (Android 4.4, API 19). No account, bookstore, networking permission, analytics, subscriptions, or root is required.
 
 ## Implemented
 
 - Single Android APK; no native code, no runtime dependencies, no network permission.
-- Native bookshelf, title/author metadata, library search, last-read sorting, and delete imported copy.
+- Two-column monochrome cover bookshelf (EPUB 2/3 embedded covers) with list toggle, title/author metadata, search, last-read sorting, and delete imported copy.
 - Local file picker for `.epub` / `.txt`; auto-copies selected files into app-private storage.
 - EPUB2 and common reflowable EPUB3 spine parsing; basic navigation document / NCX labels.
 - HTML-based chapter text display through Android's built-in, script-free `Html.fromHtml`, including common inline formatting and limited inline images.
 - Page-by-page navigation, tappable zones, physical volume/DPAD keys, basic internal-reference navigation.
 - Reading position saved into SQLite; approximate passage restoration when font size changes.
-- Chapter chooser, bookmarks, serif/sans fonts, font size, line spacing, margins, optional footer.
+- Chapter chooser, bookmarks, selectable system typefaces and imported TTF/OTF fonts, font size, optional bold, first-line indentation, paragraph spacing, line spacing, margins, optional footer.
 - Bounded per-page text layout; no animated transitions, services, wake locks or network calls.
 
 ## Known limitations (important)
@@ -24,7 +24,7 @@ FOLIO is a Java-only, offline, monochrome EPUB/TXT reader for older E Ink device
 - The legacy Android `Html.fromHtml` parser cannot exactly match all publisher CSS; complex layout can differ.
 - EPUB HTML note anchors jump to the chapter, not yet to the exact footnote ID.
 - `Spanned` fragmentation at page boundaries can change paragraph formatting in unusual cases.
-- Full-text search, exportable annotations, reading highlights, cover art grid, exact CFI, custom TTF UI, and vendor-specific E Ink refresh commands are **not in 0.5**.
+- Full-text search, exportable annotations, reading highlights, exact CFI, and vendor-specific E Ink refresh commands are **not in 0.6**.
 - Real-device performance and battery improvement have **not been measured**.
 - Support for DRM-protected EPUBs is not provided.
 
@@ -32,7 +32,7 @@ FOLIO is a Java-only, offline, monochrome EPUB/TXT reader for older E Ink device
 
 The companion `.github/workflows/folio-crema-build.yml` builds this project from `FOLIO/` using Gradle 7.6, Android Gradle Plugin 7.4.2, JDK 17, compile SDK 33, min SDK 19. The output `app-debug.apk` is signed with a debug key and enables v1 (JAR) signatures for Android 4.4. GitHub Actions artifacts contain a ZIP including the APK. Do not rename the ZIP to `.apk`; extract it first.
 
-**Important:** a debug key might differ between CI runs; for reliable updates, a persistent private signing keystore and signed release configuration are necessary. Never upload private keystores to public GitHub repositories.
+**Important:** Shelf Edition uses a different Android application ID (`org.folio.crema.shelf`) from FOLIO 0.5, and installs alongside it. Old books/bookmarks stay in the original app. Books must be imported into Shelf Edition separately. A debug key might differ between CI runs; for reliable future in-place updates, persistent private release signing is necessary. Never upload private keystores to public GitHub repositories.
 
 ### Manual build
 
@@ -71,10 +71,20 @@ No `INTERNET` permission; no remote resources or scripts. EPUB files are treated
 
 - **0.1** Validate installation and page rendering on real Crema Grande.
 - **0.5** EPUB/TXT/library/bookmarks/typography (this source milestone).
-- **1.0** Hardware tests, renderer fixes, true EPUB3/footnote handling, custom fonts, book covers and repeatable signing.
+- **0.6** Shelf Edition: actual EPUB covers, monochrome grid, font import, first-line indents and paragraph spacing.
+- **1.0** Hardware tests, renderer fixes, true EPUB3/footnote handling, repeatable private signing.
 - **2.0** PDF via vetted API19-compatible backend; text search, highlighting and exportable annotations.
 - **3.0** Optional philosophy reading collections and paragraph-level cross-references.
 
 ## Copyright
 
 Original FOLIO application source in this repository is supplied under the MIT license in `LICENSE`. Android tooling and Gradle plugins retain their respective licenses.
+
+## Shelf Edition (0.6) usage
+
+- Opens as a two-column bookshelf by default. Tap **List** for compact list mode, or **Shelf** to return to covers.
+- When an EPUB includes a cover image in its manifest, FOLIO saves a tiny local thumbnail during import. Without an embedded cover it generates a monochrome text cover (no network fetch).
+- Open a book and tap the middle third of the page. Select **Typography & layout** for font selection, font size, first-line indent, paragraph spacing, line spacing, margins, heavier text, footer. Apply saves settings.
+- To add a custom font, tap **Import TTF / OTF** from the typography dialog, select a font file in the local file picker; this copies it into FOLIO Shelf private storage. FOLIO doesn't bundle or redistribute fonts.
+- Body justification is unavailable through native Android 4.4 TextView. Complex publisher-defined paragraphs may still differ from the original.
+- Do not uninstall the original 0.5 app to try this version; they are side-by-side intentionally to protect previous imported books and bookmarks.

@@ -13,8 +13,9 @@ public final class PickerActivity extends Activity {
     private LinearLayout list;
     private TextView pathView;
     private File current;
+    private boolean pickFont;
     private final ArrayList<File> history=new ArrayList<>();
-    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);show(new File("/storage"));}
+    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);pickFont="font".equals(getIntent().getStringExtra("mode"));show(new File("/storage"));}
     private void show(File dir) {
         if(dir==null || !dir.isDirectory() || !dir.canRead()){
             File fallback=Environment.getExternalStorageDirectory();if(!fallback.isDirectory()||!fallback.canRead())fallback=new File("/");
@@ -34,11 +35,11 @@ public final class PickerActivity extends Activity {
         for(File f:files){
             if(!f.canRead() || f.getName().startsWith("."))continue;
             if(f.isDirectory()){row("▣  "+f.getName(),()->show(f));any=true;}
-            else if(f.getName().toLowerCase(Locale.US).endsWith(".epub")||f.getName().toLowerCase(Locale.US).endsWith(".txt")){
+            else if(pickFont ? (f.getName().toLowerCase(Locale.US).endsWith(".ttf")||f.getName().toLowerCase(Locale.US).endsWith(".otf")) : (f.getName().toLowerCase(Locale.US).endsWith(".epub")||f.getName().toLowerCase(Locale.US).endsWith(".txt"))){
                 row("▤  "+f.getName(),()->{Intent data=new Intent();data.putExtra("path",f.getAbsolutePath());setResult(RESULT_OK,data);finish();});any=true;
             }
         }
-        if(!any)row("No EPUB/TXT files in this folder",()->{});
+        if(!any)row(pickFont?"No TTF/OTF font files here":"No EPUB/TXT books here",()->{});
     }
     private void row(String label,Runnable click){
         TextView t=Ui.text(this,label,17,false);t.setPadding(Ui.dp(this,6),Ui.dp(this,15),Ui.dp(this,6),Ui.dp(this,15));

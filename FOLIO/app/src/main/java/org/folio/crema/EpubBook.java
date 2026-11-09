@@ -16,7 +16,7 @@ public final class EpubBook implements Closeable {
         Chapter(String p,String t){path=p;title=t;}
     }
     public static final class Meta {
-        public String title="Untitled",author="Unknown author";
+        public String title="Untitled",author="Unknown author",coverPath="";
     }
     private final ZipFile zip;
     private final String root;
@@ -46,13 +46,38 @@ public final class EpubBook implements Closeable {
         if(!author.isEmpty())metadata.author=author;
         HashMap<String,String> idPath=new HashMap<>();
         HashMap<String,String> idProperties=new HashMap<>();
+        HashMap<String,String> idTypes=new HashMap<>();
         HashMap<String,String> titleMap=new HashMap<>();
         NodeList items=pkg.getElementsByTagNameNS("*","item");
         for(int i=0;i<items.getLength();i++){
             Element e=(Element)items.item(i);String id=attr(e,"id");String href=attr(e,"href");
             if(!id.isEmpty()&&!href.isEmpty()){
                 String full=resolve(root,href);
-                idPath.put(id,full);idProperties.put(id,attr(e,"properties"));
+                idPath.put(id,full);idProperties.put(id,attr(e,"properties"));idTypes.put(id,attr(e,"media-type"));
+            }
+        }
+        // Prefer EPUB3 cover-image, then EPUB2 metadata cover ID, then obvious cover filename.
+        for(Map.Entry<String,String> item:idProperties.entrySet()){
+            if(Arrays.asList(item.getValue().split("\\s+")).contains("cover-image")){
+                metadata.coverPath=idPath.get(item.getKey());break;
+            }
+        }
+        if(metadata.coverPath.isEmpty()){
+            NodeList allMeta=pkg.getElementsByTagNameNS("*","meta");
+            for(int i=0;i<allMeta.getLength();i++){
+                Element e=(Element)allMeta.item(i);
+                if("cover".equalsIgnoreCase(attr(e,"name"))){
+                    String candidate=idPath.get(attr(e,"content"));
+                    if(candidate!=null && isImageType(idTypes.get(attr(e,"content")))){metadata.coverPath=candidate;break;}
+                }
+            }
+        }
+        if(metadata.coverPath.isEmpty()){
+            for(Map.Entry<String,String> item:idPath.entrySet()){
+                String v=item.getValue().toLowerCase(Locale.US);
+                if(isImageType(idTypes.get(item.getKey())) && (v.contains("cover.")||v.contains("cover_")||v.contains("cover-"))){
+                    metadata.coverPath=item.getValue();break;
+                }
             }
         }
         // NCX (EPUB 2) and navigation document (EPUB 3) labels are best-effort.
@@ -82,6 +107,14 @@ public final class EpubBook implements Closeable {
             hrefToSpine.put(path,String.valueOf(chapters.size()));chapters.add(new Chapter(path,name));
         }
         if(chapters.isEmpty())throw new IOException("No readable EPUB spine items");
+    }
+    private static boolean isImageType(String media) {
+        return media!=null && (media.equals("image/jpeg")||media.equals("image/png")||media.equals("image/webp"));
+    }
+    /** Returns a bounded embedded EPUB cover; absent for TXT/coverless EPUB. */
+    public byte[] coverBytes() throws IOException {
+        if(textFile||metadata.coverPath.isEmpty())return null;
+        return readBytes(metadata.coverPath,3*1024*1024);
     }
     public String chapter(int index) throws IOException {
         if(textFile)return txt;
