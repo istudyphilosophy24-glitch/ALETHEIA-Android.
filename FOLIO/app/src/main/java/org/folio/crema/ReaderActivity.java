@@ -92,7 +92,7 @@ public final class ReaderActivity extends Activity {
         });
     }
     private void applyStyle(){
-        page.setTypeface(FontCatalog.load(this,fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));page.setTextScaleX(typeScaleX);
+        page.setTypeface(FontCatalog.load(fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));page.setTextScaleX(typeScaleX);
         page.setTextSize(TypedValue.COMPLEX_UNIT_SP,fontSp);page.setLineSpacing(0,lineSpacing);
         int m=Ui.dp(this,marginDp);page.setPadding(m,Ui.dp(this,marginDp),m,Ui.dp(this,marginDp));
         footer.setVisibility(footerVisible?View.VISIBLE:View.GONE);
