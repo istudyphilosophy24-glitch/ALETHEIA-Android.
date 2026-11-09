@@ -25,8 +25,13 @@ public final class ReaderActivity extends Activity {
     private CharSequence chapterText="";
     private final ArrayList<Integer> starts=new ArrayList<>();
     private static final int PICK_FONT=207;
-    private static final int MENU_UNDERLINE=8101;
-    private static final int MENU_REMOVE_UNDERLINE=8102;
+    private static final long QUOTE_HOLD_MS=5000L;
+    private final Handler touchHandler = new Handler(Looper.getMainLooper());
+    private Runnable quoteHold;
+    private boolean touchActive=false, holdTriggered=false, touchMoved=false;
+    private int touchPointerId=-1;
+    private float downX=0,downY=0;
+    private long downAt=0;
     private int visiblePageStart=0;
     private boolean focusReading=true;
     private int chapter=0,pageIndex=0,fontSp=21,marginDp=20,indentDp=14,paragraphGapDp=7;
@@ -49,35 +54,53 @@ public final class ReaderActivity extends Activity {
         boldText=prefs.getBoolean("font_bold",false);typeScaleX=prefs.getFloat("font_width",1.0f);
         try{epub=new EpubBook(new File(record.path));}catch(Exception ex){error("Cannot open this book",ex.getMessage());return;}
         root=Ui.column(this);page=new TextView(this);page.setTextColor(Color.BLACK);page.setBackgroundColor(Color.WHITE);
-        page.setGravity(Gravity.TOP|Gravity.LEFT);page.setIncludeFontPadding(false);page.setTextIsSelectable(true);
-        page.setCustomSelectionActionModeCallback(new ActionMode.Callback(){
-            public boolean onCreateActionMode(ActionMode mode,Menu menu){
-                menu.add(0,MENU_UNDERLINE,0,"Underline").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-                menu.add(0,MENU_REMOVE_UNDERLINE,1,"Remove underline").setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
-                return true;
-            }
-            public boolean onPrepareActionMode(ActionMode mode,Menu menu){return false;}
-            public boolean onActionItemClicked(ActionMode mode,MenuItem item){
-                int id=item.getItemId();if(id!=MENU_UNDERLINE&&id!=MENU_REMOVE_UNDERLINE)return false;
-                int begin=page.getSelectionStart(),end=page.getSelectionEnd();
-                mode.finish();
-                if(begin>=0&&end>begin){annotate(visiblePageStart+begin,visiblePageStart+end,id==MENU_UNDERLINE);}
-                else Toast.makeText(ReaderActivity.this,"Long-press text and drag to select a quotation",Toast.LENGTH_LONG).show();
-                return true;
-            }
-            public void onDestroyActionMode(ActionMode mode){}
-        });
-        // Let TextView handle long-press selection; intercept only short, motionless taps.
+        page.setGravity(Gravity.TOP|Gravity.LEFT);page.setIncludeFontPadding(false);
+        // Disable ordinary TextView selection, which otherwise hijacks page taps.
+        page.setTextIsSelectable(false);
+        page.setLongClickable(false);
+        final int movementTolerance=ViewConfiguration.get(this).getScaledTouchSlop();
         page.setOnTouchListener(new View.OnTouchListener(){
-            private float downX,downY;private long downAt;
-            @Override public boolean onTouch(View v,MotionEvent e){
-                if(e.getAction()==MotionEvent.ACTION_DOWN){downX=e.getX();downY=e.getY();downAt=SystemClock.uptimeMillis();return false;}
-                if(e.getAction()!=MotionEvent.ACTION_UP)return false;
-                if(SystemClock.uptimeMillis()-downAt>300 || Math.abs(e.getX()-downX)>Ui.dp(ReaderActivity.this,11)
-                    || Math.abs(e.getY()-downY)>Ui.dp(ReaderActivity.this,11))return false;
-                if((page.getSelectionStart()>=0 && page.getSelectionEnd()>page.getSelectionStart()))return false;
-                if(followLink(e))return true;
-                int width=page.getWidth();if(e.getX()<width*.30f)previous();else if(e.getX()>width*.70f)next();else menu();
+            @Override public boolean onTouch(View view,MotionEvent event){
+                int action=event.getActionMasked();
+                if(action==MotionEvent.ACTION_DOWN){
+                    cancelHold();touchActive=true;touchMoved=false;holdTriggered=false;
+                    touchPointerId=event.getPointerId(0);
+                    downX=event.getX();downY=event.getY();downAt=SystemClock.uptimeMillis();
+                    final float holdX=downX,holdY=downY;
+                    quoteHold=new Runnable(){@Override public void run(){
+                        if(!touchActive||touchMoved||holdTriggered)return;
+                        holdTriggered=true;
+                        openQuotationPicker(holdX,holdY);
+                    }};
+                    touchHandler.postDelayed(quoteHold,QUOTE_HOLD_MS);
+                    return true;
+                }
+                if(action==MotionEvent.ACTION_POINTER_DOWN){
+                    touchMoved=true;cancelHold();return true;
+                }
+                if(action==MotionEvent.ACTION_MOVE){
+                    int idx=event.findPointerIndex(touchPointerId);
+                    if(idx<0||Math.abs(event.getX(idx)-downX)>movementTolerance
+                        ||Math.abs(event.getY(idx)-downY)>movementTolerance){
+                        touchMoved=true;cancelHold();
+                    }
+                    return true;
+                }
+                if(action==MotionEvent.ACTION_CANCEL){
+                    cancelHold();touchActive=false;return true;
+                }
+                if(action==MotionEvent.ACTION_UP){
+                    cancelHold();touchActive=false;
+                    if(holdTriggered||touchMoved)return true;
+                    long elapsed=SystemClock.uptimeMillis()-downAt;
+                    if(elapsed>1100L)return true;
+                    if(followLink(event))return true;
+                    int width=page.getWidth();
+                    if(event.getX()<width*.30f)previous();
+                    else if(event.getX()>width*.70f)next();
+                    else menu();
+                    return true;
+                }
                 return true;
             }
         });
@@ -90,6 +113,77 @@ public final class ReaderActivity extends Activity {
             if(layoutWidth<=20 || layoutHeight<=20){error("Display not ready","Reading viewport could not be measured");return;}
             chapter=Math.max(0,Math.min(record.chapter,epub.chapters.size()-1));loadChapter(chapter,record.offset);
         });
+    }
+    private void cancelHold(){
+        if(quoteHold!=null){touchHandler.removeCallbacks(quoteHold);quoteHold=null;}
+    }
+    /** An isolated selection panel prevents selection gestures from stealing page taps. */
+    private void openQuotationPicker(float x,float y){
+        if(page==null||page.getText().length()==0)return;
+        final int base=visiblePageStart;
+        final CharSequence visible=page.getText();
+        final int nearby=offsetAtTouch(x,y);
+        final TextView selectionView=new TextView(this);
+        selectionView.setTextColor(Color.BLACK);selectionView.setBackgroundColor(Color.WHITE);
+        selectionView.setTextSize(TypedValue.COMPLEX_UNIT_SP,Math.min(25,Math.max(17,fontSp)));
+        selectionView.setTypeface(FontCatalog.load(fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));
+        selectionView.setIncludeFontPadding(false);
+        selectionView.setLineSpacing(Ui.dp(this,3),1.20f);
+        selectionView.setText(visible,TextView.BufferType.SPANNABLE);
+        selectionView.setTextIsSelectable(true);
+        int pad=Ui.dp(this,13);selectionView.setPadding(pad,pad,pad,pad);
+        final ScrollView scroll=new ScrollView(this);
+        scroll.addView(selectionView,new FrameLayout.LayoutParams(-1,-2));
+        final LinearLayout panel=Ui.column(this);
+        TextView instruction=Ui.text(this,"Select words below and adjust the handles, then tap Underline selection. Or use Nearest sentence.",14,false);
+        instruction.setPadding(pad,pad,pad,pad);instruction.setTextColor(Color.DKGRAY);
+        panel.addView(instruction);
+        panel.addView(scroll,new LinearLayout.LayoutParams(-1,Ui.dp(this,300)));
+        final AlertDialog dialog=new AlertDialog.Builder(this)
+            .setTitle("Quotation selection")
+            .setView(panel)
+            .setPositiveButton("Underline selection",null)
+            .setNeutralButton("Nearest sentence",null)
+            .setNegativeButton("Cancel",null)
+            .create();
+        dialog.setOnShowListener(d->{
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+                int selectedStart=selectionView.getSelectionStart(),selectedEnd=selectionView.getSelectionEnd();
+                if(selectedStart<0||selectedEnd<=selectedStart){
+                    Toast.makeText(this,"Select text in the panel first, or tap Nearest sentence",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                dialog.dismiss();annotate(base+selectedStart,base+selectedEnd,true);
+            });
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{
+                int[] range=sentenceNear(visible.toString(),nearby);
+                if(range==null){
+                    Toast.makeText(this,"No text to underline here",Toast.LENGTH_SHORT).show();return;
+                }
+                dialog.dismiss();annotate(base+range[0],base+range[1],true);
+            });
+        });
+        dialog.show();
+    }
+    private int offsetAtTouch(float x,float y){
+        Layout layout=page.getLayout();if(layout==null||layout.getHeight()==0)return 0;
+        int xx=(int)x-page.getTotalPaddingLeft(),yy=(int)y-page.getTotalPaddingTop();
+        int line=layout.getLineForVertical(Math.max(0,Math.min(layout.getHeight()-1,yy)));
+        return Math.max(0,Math.min(page.getText().length(),layout.getOffsetForHorizontal(line,Math.max(0,xx))));
+    }
+    private int[] sentenceNear(String text,int anchor){
+        if(text==null||text.trim().isEmpty())return null;
+        Matcher m=Pattern.compile("[^.!?\\n]+(?:[.!?]+|$)").matcher(text);
+        int[] nearest=null;int distance=Integer.MAX_VALUE;
+        while(m.find()){
+            int a=m.start(),b=m.end();
+            while(a<b&&Character.isWhitespace(text.charAt(a)))a++;
+            while(b>a&&Character.isWhitespace(text.charAt(b-1)))b--;
+            if(a>=b)continue;
+            int delta=anchor<a?a-anchor:anchor>=b?anchor-b+1:0;
+            if(delta<distance){distance=delta;nearest=new int[]{a,b};if(delta==0)break;}
+        }
+        return nearest;
     }
     private void applyStyle(){
         page.setTypeface(FontCatalog.load(fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));page.setTextScaleX(typeScaleX);
@@ -207,8 +301,8 @@ public final class ReaderActivity extends Activity {
     }
     private void menu(){
         new AlertDialog.Builder(this).setTitle("FOLIO · "+record.title)
-            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Underlined quotations","Underline a sentence","Reading styles","Typography & layout","Focus & battery","Return to library"},
-                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:quotationList();break;case 5:underlineSentence();break;case 6:readingStyles();break;case 7:typography();break;case 8:focusMenu();break;case 9:finish();break;default:break;}})
+            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Underlined quotations","Underline help (5s hold)","Reading styles","Typography & layout","Focus & battery","Return to library"},
+                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:quotationList();break;case 5:showUnderlineHelp();break;case 6:readingStyles();break;case 7:typography();break;case 8:focusMenu();break;case 9:finish();break;default:break;}})
             .show();
     }
     private void toc(){String[] labels=new String[epub.chapters.size()];for(int i=0;i<labels.length;i++)labels[i]=epub.chapters.get(i).title;
@@ -242,31 +336,15 @@ public final class ReaderActivity extends Activity {
             if(b>a)sp.setSpan(new FolioUnderlineSpan(),a,b,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
     }
-    /** Backup for e-ink touchscreens where dragging a text selection is awkward. */
-    private void underlineSentence(){
-        int first=startAt(pageIndex),last=endFor(first);
-        String text=chapterText.subSequence(first,last).toString();
-        final ArrayList<int[]> ranges=new ArrayList<int[]>();
-        final ArrayList<String> snippets=new ArrayList<String>();
-        java.util.regex.Matcher m=Pattern.compile("[^.!?\\n]+(?:[.!?]+|$)").matcher(text);
-        while(m.find()&&ranges.size()<20){int a=m.start(),b=m.end();
-            while(a<b&&Character.isWhitespace(text.charAt(a)))a++;
-            while(b>a&&Character.isWhitespace(text.charAt(b-1)))b--;
-            if(b-a<8)continue;
-            ranges.add(new int[]{first+a,first+b});
-            String sample=text.substring(a,b).replace('\n',' ').trim();
-            snippets.add(sample.length()>130?sample.substring(0,127)+"…":sample);
-        }
-        if(snippets.isEmpty()){Toast.makeText(this,"No complete sentence on this page",Toast.LENGTH_LONG).show();return;}
-        new AlertDialog.Builder(this).setTitle("Underline a sentence")
-            .setItems(snippets.toArray(new String[0]),(d,idx)->{
-                int[] r=ranges.get(idx);annotate(r[0],r[1],true);
-            }).setNegativeButton("Cancel",null).show();
+    private void showUnderlineHelp(){
+        new AlertDialog.Builder(this).setTitle("Underline quotations")
+            .setMessage("Hold your finger still on a passage for FIVE full seconds. A quotation picker opens. Select exact words or tap Nearest sentence.\n\nQuick taps on the left or right turn pages; the center opens the menu.")
+            .setPositiveButton("Got it",null).show();
     }
     private void quotationList(){
         final ArrayList<BookStore.Quote> quotes=db.underlines(record.id,-1);
         if(quotes.isEmpty()){new AlertDialog.Builder(this).setTitle("Underlined quotations")
-            .setMessage("To underline: long-press a passage, adjust the handles, and tap Underline. Or choose Underline a sentence from the reading menu.")
+            .setMessage("To underline, hold a passage for five seconds. A separate quotation picker opens. Ordinary taps turn pages.")
             .setPositiveButton("OK",null).show();return;}
         String[] labels=new String[quotes.size()];
         for(int i=0;i<quotes.size();i++){
@@ -390,6 +468,6 @@ public final class ReaderActivity extends Activity {
         return super.onKeyDown(code,e);
     }
     @Override public void onBackPressed(){if(!jumpHistory.isEmpty()){int[] p=jumpHistory.pop();loadChapter(p[0],p[1]);return;}super.onBackPressed();}
-    @Override protected void onPause(){if(started && chapterText!=null && record!=null)persist(startAt(pageIndex));super.onPause();}
-    @Override protected void onDestroy(){try{if(epub!=null)epub.close();}catch(IOException ignored){}if(db!=null)db.close();super.onDestroy();}
+    @Override protected void onPause(){cancelHold();touchActive=false;if(started && chapterText!=null && record!=null)persist(startAt(pageIndex));super.onPause();}
+    @Override protected void onDestroy(){cancelHold();try{if(epub!=null)epub.close();}catch(IOException ignored){}if(db!=null)db.close();super.onDestroy();}
 }
