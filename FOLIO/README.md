@@ -1,0 +1,80 @@
+# FOLIO — Offline Crema Grande Reader
+
+**Status:** Android 4.4 prototype / 0.5 source release. **Do not assume untested features are complete.**
+
+FOLIO is a Java-only, offline, monochrome EPUB/TXT reader for older E Ink devices including the Crema Grande (Android 4.4, API 19). No account, bookstore, networking permission, analytics, subscriptions, or root is required.
+
+## Implemented
+
+- Single Android APK; no native code, no runtime dependencies, no network permission.
+- Native bookshelf, title/author metadata, library search, last-read sorting, and delete imported copy.
+- Local file picker for `.epub` / `.txt`; auto-copies selected files into app-private storage.
+- EPUB2 and common reflowable EPUB3 spine parsing; basic navigation document / NCX labels.
+- HTML-based chapter text display through Android's built-in, script-free `Html.fromHtml`, including common inline formatting and limited inline images.
+- Page-by-page navigation, tappable zones, physical volume/DPAD keys, basic internal-reference navigation.
+- Reading position saved into SQLite; approximate passage restoration when font size changes.
+- Chapter chooser, bookmarks, serif/sans fonts, font size, line spacing, margins, optional footer.
+- Bounded per-page text layout; no animated transitions, services, wake locks or network calls.
+
+## Known limitations (important)
+
+- **PDF is not implemented**: Android 4.4 predates `PdfRenderer`. A separately licensed native PDF engine needs to be integrated and benchmarked on hardware.
+- EPUB3 fixed-layout, scripting, interactive EPUB, synchronized media, some CSS, tables and vertical text are not supported.
+- Inline images are downscaled and limited; heavy image books may be slow.
+- The legacy Android `Html.fromHtml` parser cannot exactly match all publisher CSS; complex layout can differ.
+- EPUB HTML note anchors jump to the chapter, not yet to the exact footnote ID.
+- `Spanned` fragmentation at page boundaries can change paragraph formatting in unusual cases.
+- Full-text search, exportable annotations, reading highlights, cover art grid, exact CFI, custom TTF UI, and vendor-specific E Ink refresh commands are **not in 0.5**.
+- Real-device performance and battery improvement have **not been measured**.
+- Support for DRM-protected EPUBs is not provided.
+
+## Build on GitHub Actions
+
+The companion `.github/workflows/folio-crema-build.yml` builds this project from `FOLIO/` using Gradle 7.6, Android Gradle Plugin 7.4.2, JDK 17, compile SDK 33, min SDK 19. The output `app-debug.apk` is signed with a debug key and enables v1 (JAR) signatures for Android 4.4. GitHub Actions artifacts contain a ZIP including the APK. Do not rename the ZIP to `.apk`; extract it first.
+
+**Important:** a debug key might differ between CI runs; for reliable updates, a persistent private signing keystore and signed release configuration are necessary. Never upload private keystores to public GitHub repositories.
+
+### Manual build
+
+Install JDK 17, Gradle 7.6, Android SDK 33, Build Tools 33.0.2, then from `FOLIO/`:
+
+```sh
+gradle --no-daemon assembleDebug
+```
+
+APK: `app/build/outputs/apk/debug/app-debug.apk`.
+
+### Install on Crema Grande
+
+1. Back up books and settings before changing reader apps. This app does **not** replace firmware or the Korean launcher.
+2. Download the GitHub Actions artifact ZIP, unzip, and copy `app-debug.apk` to the reader with a USB cable.
+3. Enable `Settings → Security → Unknown sources` as appropriate for the device.
+4. Open APK with an installer/file manager; launch **FOLIO Crema Reader**.
+5. Tap **+ Import** and navigate to your existing EPUB/TXT location. Files are copied into FOLIO private storage to ensure reliable access.
+
+### Updating
+
+Do not uninstall without backing up your reading data: uninstalling will delete FOLIO's private imported books and SQLite bookmarks. If an update fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the new debug APK uses a different signing key. Do **not** uninstall merely to force an update without preserving data.
+
+## Reader controls
+
+- Left third of text: previous page; right third: next page; middle: menu.
+- Volume/DPAD right: next; Volume/DPAD left: previous.
+- Reader menu: table of contents, bookmarks, typography, and return to library.
+- Long-press book in library to remove the *imported copy*; source files are not modified.
+
+## Security/privacy
+
+No `INTERNET` permission; no remote resources or scripts. EPUB files are treated as untrusted, bounded by per-entry reading limits, entry-count and import size caps, and XML parser restrictions. The implementation is experimental and should be audited before use with adversarial EPUBs.
+
+## Implementation roadmap
+
+- **0.1** Validate installation and page rendering on real Crema Grande.
+- **0.5** EPUB/TXT/library/bookmarks/typography (this source milestone).
+- **1.0** Hardware tests, renderer fixes, true EPUB3/footnote handling, custom fonts, book covers and repeatable signing.
+- **2.0** PDF via vetted API19-compatible backend; text search, highlighting and exportable annotations.
+- **3.0** Optional philosophy reading collections and paragraph-level cross-references.
+
+## Copyright
+
+Original FOLIO application source in this repository is supplied under the MIT license in `LICENSE`. Android tooling and Gradle plugins retain their respective licenses.
