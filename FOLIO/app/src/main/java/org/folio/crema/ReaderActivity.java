@@ -21,6 +21,12 @@ public final class ReaderActivity extends Activity {
     private BookStore.Book record;
     private EpubBook epub;
     private TextView page,footer;
+    private ImageView coverView;
+    private Bitmap coverBitmap;
+    private boolean showingFullPageArt=false;
+    private boolean cropCover=false;
+    private int lastMeasuredWidth=0,lastMeasuredHeight=0;
+    private boolean resizePending=false;
     private LinearLayout root;
     private CharSequence chapterText="";
     private final ArrayList<Integer> starts=new ArrayList<>();
@@ -52,15 +58,17 @@ public final class ReaderActivity extends Activity {
         indentDp=prefs.getInt("indent",14);paragraphGapDp=prefs.getInt("paragraph_gap",7);
         fontKey=prefs.getString("font_key",prefs.getBoolean("serif",true)?"sys:serif":"sys:sans-serif");
         boldText=prefs.getBoolean("font_bold",false);typeScaleX=prefs.getFloat("font_width",1.0f);
+        cropCover=prefs.getBoolean("cover_crop",false);
         try{epub=new EpubBook(new File(record.path));}catch(Exception ex){error("Cannot open this book",ex.getMessage());return;}
         root=Ui.column(this);page=new TextView(this);page.setTextColor(Color.BLACK);page.setBackgroundColor(Color.WHITE);
         page.setGravity(Gravity.TOP|Gravity.LEFT);page.setIncludeFontPadding(false);
-        // Disable ordinary TextView selection, which otherwise hijacks page taps.
+        // Never let TextView turn ordinary page taps into Android's text-selection mode.
+        // Quotation selection is isolated in a dialog after a deliberate five-second hold.
         page.setTextIsSelectable(false);
         page.setLongClickable(false);
         final int movementTolerance=ViewConfiguration.get(this).getScaledTouchSlop();
-        page.setOnTouchListener(new View.OnTouchListener(){
-            @Override public boolean onTouch(View view,MotionEvent event){
+        final View.OnTouchListener readingTouch=new View.OnTouchListener(){
+            @Override public boolean onTouch(View view, MotionEvent event){
                 int action=event.getActionMasked();
                 if(action==MotionEvent.ACTION_DOWN){
                     cancelHold();touchActive=true;touchMoved=false;holdTriggered=false;
@@ -72,7 +80,7 @@ public final class ReaderActivity extends Activity {
                         holdTriggered=true;
                         openQuotationPicker(holdX,holdY);
                     }};
-                    touchHandler.postDelayed(quoteHold,QUOTE_HOLD_MS);
+                    if(!showingFullPageArt)touchHandler.postDelayed(quoteHold,QUOTE_HOLD_MS);
                     return true;
                 }
                 if(action==MotionEvent.ACTION_POINTER_DOWN){
@@ -91,23 +99,51 @@ public final class ReaderActivity extends Activity {
                 }
                 if(action==MotionEvent.ACTION_UP){
                     cancelHold();touchActive=false;
+                    // An actual five-second hold never also turns the page.
                     if(holdTriggered||touchMoved)return true;
                     long elapsed=SystemClock.uptimeMillis()-downAt;
-                    if(elapsed>1100L)return true;
-                    if(followLink(event))return true;
-                    int width=page.getWidth();
+                    if(elapsed>1100L)return true; // deliberate but incomplete hold: do nothing.
+                    if(!showingFullPageArt && followLink(event))return true;
+                    int width=view.getWidth();
                     if(event.getX()<width*.30f)previous();
                     else if(event.getX()>width*.70f)next();
                     else menu();
                     return true;
                 }
-                return true;
+                return true; // Do not forward touches to TextView's selection handler.
             }
-        });
-        root.addView(page,new LinearLayout.LayoutParams(-1,0,1));
+        };
+        page.setOnTouchListener(readingTouch);
+        coverView=new ImageView(this);
+        coverView.setBackgroundColor(Color.WHITE);
+        coverView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        coverView.setVisibility(View.GONE);
+        coverView.setOnTouchListener(readingTouch);
+        FrameLayout readingSurface=new FrameLayout(this);
+        readingSurface.setBackgroundColor(Color.WHITE);
+        readingSurface.addView(page,new FrameLayout.LayoutParams(-1,-1));
+        readingSurface.addView(coverView,new FrameLayout.LayoutParams(-1,-1));
+        root.addView(readingSurface,new LinearLayout.LayoutParams(-1,0,1));
         footer=Ui.text(this,"",11,false);footer.setTextColor(Color.DKGRAY);footer.setGravity(Gravity.CENTER);
         footer.setOnClickListener(v->menu());root.addView(footer,new LinearLayout.LayoutParams(-1,Ui.dp(this,27)));
         setContentView(root);applyStyle();
+        // Recalculate text pagination when the viewport actually changes (rotation or
+        // UI changes). The reading anchor is retained, not a stale visual page number.
+        page.addOnLayoutChangeListener(new View.OnLayoutChangeListener(){
+            @Override public void onLayoutChange(View v,int l,int t,int r,int b,int ol,int ot,int oright,int ob){
+                int w=r-l-page.getPaddingLeft()-page.getPaddingRight();
+                int h=b-t-page.getPaddingTop()-page.getPaddingBottom();
+                if(w<80||h<80)return;
+                if(lastMeasuredWidth==w&&lastMeasuredHeight==h)return;
+                lastMeasuredWidth=w;lastMeasuredHeight=h;
+                if(!started||resizePending||showingFullPageArt)return;
+                resizePending=true;
+                page.post(()->{resizePending=false;
+                    if(isFinishing()||epub==null||record==null)return;
+                    loadChapter(chapter,Math.max(0,startAt(pageIndex)));
+                });
+            }
+        });
         page.post(()->{
             layoutWidth=page.getWidth()-page.getPaddingLeft()-page.getPaddingRight();layoutHeight=page.getHeight()-page.getPaddingTop()-page.getPaddingBottom();
             if(layoutWidth<=20 || layoutHeight<=20){error("Display not ready","Reading viewport could not be measured");return;}
@@ -117,9 +153,9 @@ public final class ReaderActivity extends Activity {
     private void cancelHold(){
         if(quoteHold!=null){touchHandler.removeCallbacks(quoteHold);quoteHold=null;}
     }
-    /** An isolated selection panel prevents selection gestures from stealing page taps. */
+    /** The exact quotation picker is shown only after an intentional five-second page hold. */
     private void openQuotationPicker(float x,float y){
-        if(page==null||page.getText().length()==0)return;
+        if(page==null||showingFullPageArt||page.getText().length()==0)return;
         final int base=visiblePageStart;
         final CharSequence visible=page.getText();
         final int nearby=offsetAtTouch(x,y);
@@ -132,10 +168,10 @@ public final class ReaderActivity extends Activity {
         selectionView.setText(visible,TextView.BufferType.SPANNABLE);
         selectionView.setTextIsSelectable(true);
         int pad=Ui.dp(this,13);selectionView.setPadding(pad,pad,pad,pad);
-        final ScrollView scroll=new ScrollView(this);
+        final ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);
         scroll.addView(selectionView,new FrameLayout.LayoutParams(-1,-2));
         final LinearLayout panel=Ui.column(this);
-        TextView instruction=Ui.text(this,"Select words below and adjust the handles, then tap Underline selection. Or use Nearest sentence.",14,false);
+        TextView instruction=Ui.text(this,"Hold and select text below, adjust the handles, then choose UNDERLINE SELECTION. Or mark the sentence nearest your original touch.",14,false);
         instruction.setPadding(pad,pad,pad,pad);instruction.setTextColor(Color.DKGRAY);
         panel.addView(instruction);
         panel.addView(scroll,new LinearLayout.LayoutParams(-1,Ui.dp(this,300)));
@@ -144,44 +180,43 @@ public final class ReaderActivity extends Activity {
             .setView(panel)
             .setPositiveButton("Underline selection",null)
             .setNeutralButton("Nearest sentence",null)
-            .setNegativeButton("Cancel",null)
+            .setNegativeButton("Cancel",(d,w)->{})
             .create();
         dialog.setOnShowListener(d->{
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
-                int selectedStart=selectionView.getSelectionStart(),selectedEnd=selectionView.getSelectionEnd();
-                if(selectedStart<0||selectedEnd<=selectedStart){
+                int start=selectionView.getSelectionStart(),end=selectionView.getSelectionEnd();
+                if(start<0||end<=start){
                     Toast.makeText(this,"Select text in the panel first, or tap Nearest sentence",Toast.LENGTH_LONG).show();
                     return;
                 }
-                dialog.dismiss();annotate(base+selectedStart,base+selectedEnd,true);
+                dialog.dismiss();
+                annotate(base+start,base+end,true);
             });
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{
                 int[] range=sentenceNear(visible.toString(),nearby);
-                if(range==null){
-                    Toast.makeText(this,"No text to underline here",Toast.LENGTH_SHORT).show();return;
-                }
+                if(range==null){Toast.makeText(this,"No text to underline here",Toast.LENGTH_SHORT).show();return;}
                 dialog.dismiss();annotate(base+range[0],base+range[1],true);
             });
         });
         dialog.show();
     }
     private int offsetAtTouch(float x,float y){
-        Layout layout=page.getLayout();if(layout==null||layout.getHeight()==0)return 0;
+        Layout l=page.getLayout();if(l==null)return 0;
         int xx=(int)x-page.getTotalPaddingLeft(),yy=(int)y-page.getTotalPaddingTop();
-        int line=layout.getLineForVertical(Math.max(0,Math.min(layout.getHeight()-1,yy)));
-        return Math.max(0,Math.min(page.getText().length(),layout.getOffsetForHorizontal(line,Math.max(0,xx))));
+        int line=l.getLineForVertical(Math.max(0,Math.min(l.getHeight()-1,yy)));
+        return Math.max(0,Math.min(page.getText().length(),l.getOffsetForHorizontal(line,Math.max(0,xx))));
     }
     private int[] sentenceNear(String text,int anchor){
         if(text==null||text.trim().isEmpty())return null;
         Matcher m=Pattern.compile("[^.!?\\n]+(?:[.!?]+|$)").matcher(text);
         int[] nearest=null;int distance=Integer.MAX_VALUE;
         while(m.find()){
-            int a=m.start(),b=m.end();
-            while(a<b&&Character.isWhitespace(text.charAt(a)))a++;
-            while(b>a&&Character.isWhitespace(text.charAt(b-1)))b--;
-            if(a>=b)continue;
-            int delta=anchor<a?a-anchor:anchor>=b?anchor-b+1:0;
-            if(delta<distance){distance=delta;nearest=new int[]{a,b};if(delta==0)break;}
+            int start=m.start(),end=m.end();
+            while(start<end&&Character.isWhitespace(text.charAt(start)))start++;
+            while(end>start&&Character.isWhitespace(text.charAt(end-1)))end--;
+            if(start>=end)continue;
+            int d=anchor<start?start-anchor:anchor>=end?anchor-end+1:0;
+            if(d<distance){distance=d;nearest=new int[]{start,end};if(d==0)break;}
         }
         return nearest;
     }
@@ -189,7 +224,7 @@ public final class ReaderActivity extends Activity {
         page.setTypeface(FontCatalog.load(fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));page.setTextScaleX(typeScaleX);
         page.setTextSize(TypedValue.COMPLEX_UNIT_SP,fontSp);page.setLineSpacing(0,lineSpacing);
         int m=Ui.dp(this,marginDp);page.setPadding(m,Ui.dp(this,marginDp),m,Ui.dp(this,marginDp));
-        footer.setVisibility(footerVisible?View.VISIBLE:View.GONE);
+        footer.setVisibility(showingFullPageArt?View.GONE:(footerVisible?View.VISIBLE:View.GONE));
     }
     private void error(String title,String msg){new AlertDialog.Builder(this).setTitle(title).setMessage(msg==null?"Unsupported or damaged document":msg)
         .setCancelable(false).setPositiveButton("Close",(d,w)->finish()).show();}
@@ -198,6 +233,19 @@ public final class ReaderActivity extends Activity {
         chapter=newChapter;
         try {
             String markup=epub.chapter(chapter);
+            String fullPageAsset=record.format.equals("txt")?null:epub.fullPageImagePath(chapter,markup);
+            if(fullPageAsset!=null && showFullPageImage(fullPageAsset)){
+                chapterText="";
+                starts.clear();starts.add(0);pageIndex=0;visiblePageStart=0;
+                footer.setText(epub.chapters.get(chapter).title);
+                persist(0);started=true;return;
+            }
+            leaveFullPageImage();
+            // Following a full-page cover the text view was GONE during layout.
+            // Wait for its real bounds rather than paginating at an 80px fallback.
+            if(page.getWidth()<100 || page.getHeight()<100){
+                page.post(()->loadChapter(newChapter,requestedChar));return;
+            }
             CharSequence original=record.format.equals("txt")?markup.replace("\r\n","\n"):renderHtml(markup);
             chapterText=TextLayoutStyler.style(original,Ui.dp(this,indentDp),Ui.dp(this,paragraphGapDp),record.format.equals("txt"));
             refreshUnderlineSpans();
@@ -210,35 +258,85 @@ public final class ReaderActivity extends Activity {
                 if(end>=goal)break;starts.add(end);pageIndex++;
             }
             showPage();started=true;
-        }catch(Exception e){error("Chapter failed to render",e.getMessage());}
+        }catch(Exception e){leaveFullPageImage();error("Chapter failed to render",e.getMessage());}
+    }
+
+    /** True book-cover / image-only spine page, not a large ImageSpan in a line of text. */
+    private boolean showFullPageImage(String path){
+        try{
+            byte[] raw=epub.asset(path,12*1024*1024);
+            BitmapFactory.Options bounds=new BitmapFactory.Options();bounds.inJustDecodeBounds=true;
+            BitmapFactory.decodeByteArray(raw,0,raw.length,bounds);
+            if(bounds.outWidth<1||bounds.outHeight<1)return false;
+            BitmapFactory.Options opt=new BitmapFactory.Options();
+            int sample=1;
+            while(bounds.outWidth/sample>1500||bounds.outHeight/sample>2000)sample*=2;
+            opt.inSampleSize=sample;opt.inPreferredConfig=Bitmap.Config.RGB_565;
+            Bitmap decoded=BitmapFactory.decodeByteArray(raw,0,raw.length,opt);
+            if(decoded==null)return false;
+            if(coverBitmap!=null){coverView.setImageDrawable(null);coverBitmap.recycle();}
+            coverBitmap=decoded;
+            showingFullPageArt=true;
+            page.setVisibility(View.GONE);
+            coverView.setImageBitmap(decoded);
+            coverView.setScaleType(cropCover?ImageView.ScaleType.CENTER_CROP:ImageView.ScaleType.FIT_CENTER);
+            coverView.setVisibility(View.VISIBLE);
+            footer.setVisibility(View.GONE);
+            return true;
+        }catch(Exception ignored){return false;}
+    }
+    private void leaveFullPageImage(){
+        if(!showingFullPageArt)return;
+        showingFullPageArt=false;
+        coverView.setVisibility(View.GONE);
+        coverView.setImageDrawable(null);
+        if(coverBitmap!=null){coverBitmap.recycle();coverBitmap=null;}
+        page.setVisibility(View.VISIBLE);
+        footer.setVisibility(footerVisible?View.VISIBLE:View.GONE);
     }
     private CharSequence renderHtml(String source) {
-        // Android Html.fromHtml never executes JavaScript. Strip styling and active HTML anyway.
+        // EPUB is reflowed to the actual Crema viewport: publisher pixel dimensions,
+        // scripts, CSS fixed widths, and obsolete XHTML layouts are not imposed on pages.
         String clean=source.replaceAll("(?is)<!DOCTYPE[^>]*>","")
             .replaceAll("(?is)<script\\b[^>]*>.*?</script>","")
             .replaceAll("(?is)<style\\b[^>]*>.*?</style>","")
             .replaceAll("(?is)<iframe\\b[^>]*>.*?</iframe>","")
             .replaceAll("(?is)<svg\\b[^>]*>.*?</svg>","");
-        Matcher m=Pattern.compile("(?is)<body\\b[^>]*>(.*?)</body>").matcher(clean);if(m.find())clean=m.group(1);
-        final String local=clean;final int which=chapter;
+        // KitKat Html.fromHtml does not know newer HTML5 semantic block tags.
+        clean=clean.replaceAll("(?i)<(section|article|main|aside)\\b[^>]*>","<div>")
+            .replaceAll("(?i)</(section|article|main|aside)\\s*>","</div>");
+        Matcher m=Pattern.compile("(?is)<body\\b[^>]*>(.*?)</body>").matcher(clean);
+        if(m.find())clean=m.group(1);
+        final int which=chapter;
         Html.ImageGetter imageGetter=new Html.ImageGetter(){int images=0;
             @Override public Drawable getDrawable(String source){
-                if(++images>12)return emptyImage();
+                if(++images>40)return emptyImage();
                 try{
                     String path=epub.assetPath(which,source);
-                    if(path.isEmpty())return emptyImage();byte[] raw=epub.asset(path,2*1024*1024);
-                    BitmapFactory.Options opt=new BitmapFactory.Options();opt.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(raw,0,raw.length,opt);
-                    if(opt.outWidth<1||opt.outHeight<1)return emptyImage();int sample=1;
-                    while(opt.outWidth/sample>1024||opt.outHeight/sample>1024)sample*=2;
-                    opt.inSampleSize=sample;opt.inJustDecodeBounds=false;
-                    Bitmap bmp=BitmapFactory.decodeByteArray(raw,0,raw.length,opt);if(bmp==null)return emptyImage();
-                    BitmapDrawable d=new BitmapDrawable(getResources(),bmp);int maxWidth=Math.max(100,layoutWidth);
-                    float scale=Math.min(1f,Math.min((float)maxWidth/bmp.getWidth(),(float)Ui.dp(ReaderActivity.this,450)/bmp.getHeight()));
-                    d.setBounds(0,0,Math.max(1,(int)(bmp.getWidth()*scale)),Math.max(1,(int)(bmp.getHeight()*scale)));return d;
+                    if(path.isEmpty())return emptyImage();byte[] raw=epub.asset(path,8*1024*1024);
+                    BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;
+                    BitmapFactory.decodeByteArray(raw,0,raw.length,opts);
+                    if(opts.outWidth<1||opts.outHeight<1)return emptyImage();
+                    int maxW=Math.max(100,page.getWidth()-page.getPaddingLeft()-page.getPaddingRight());
+                    int maxH=Math.max(100,page.getHeight()-page.getPaddingTop()-page.getPaddingBottom()-Ui.dp(ReaderActivity.this,8));
+                    if(maxW<=100)maxW=Math.max(100,layoutWidth);
+                    if(maxH<=100)maxH=Math.max(100,layoutHeight);
+                    int sample=1;
+                    while(opts.outWidth/sample>maxW*2||opts.outHeight/sample>maxH*2)sample*=2;
+                    opts.inJustDecodeBounds=false;opts.inSampleSize=sample;opts.inPreferredConfig=Bitmap.Config.RGB_565;
+                    Bitmap bmp=BitmapFactory.decodeByteArray(raw,0,raw.length,opts);
+                    if(bmp==null)return emptyImage();
+                    BitmapDrawable d=new BitmapDrawable(getResources(),bmp);
+                    float fit=Math.min((float)maxW/bmp.getWidth(),(float)maxH/bmp.getHeight());
+                    // Don't enlarge tiny icons to page-sized blur; covers use their own pane.
+                    fit=Math.min(1.5f,fit);
+                    // Illustrations fit the current viewport; text remains reflowable.
+                    d.setBounds(0,0,Math.max(1,Math.round(bmp.getWidth()*fit)),Math.max(1,Math.round(bmp.getHeight()*fit)));
+                    return d;
                 }catch(Exception ignored){return emptyImage();}
             }
         };
-        return Html.fromHtml(local,imageGetter,null);
+        return Html.fromHtml(clean,imageGetter,null);
     }
     private Drawable emptyImage(){GradientDrawable g=new GradientDrawable();g.setColor(Color.WHITE);g.setBounds(0,0,2,2);return g;}
     private int startAt(int n){return starts.get(Math.max(0,Math.min(n,starts.size()-1)));}
@@ -263,7 +361,7 @@ public final class ReaderActivity extends Activity {
         return Math.min(len,result);
     }
     private void showPage(){
-        if(page==null || chapterText==null)return;
+        if(page==null || chapterText==null||showingFullPageArt)return;
         int begin=startAt(pageIndex);int end=endFor(begin);
         visiblePageStart=begin;
         page.setText(chapterText.subSequence(begin,Math.max(begin,end)),TextView.BufferType.SPANNABLE);
@@ -273,19 +371,22 @@ public final class ReaderActivity extends Activity {
         footer.setText(caption);persist(begin);
     }
     private void persist(int offset){if(record!=null)db.position(record.id,chapter,Math.max(0,offset));}
-    private void next(){if(loading||epub==null)return;int last=startAt(pageIndex);int end=endFor(last);
+    private void next(){if(loading||epub==null)return;
+        if(showingFullPageArt){if(chapter+1<epub.chapters.size())loadChapter(chapter+1,0);return;}
+        int last=startAt(pageIndex);int end=endFor(last);
         if(end<chapterText.length()){
             if(pageIndex+1>=starts.size())starts.add(end);
             pageIndex++;showPage();
         }else if(chapter+1<epub.chapters.size()){loadChapter(chapter+1,0);}
     }
     private void previous(){if(loading||epub==null)return;
+        if(showingFullPageArt){if(chapter>0)loadChapter(chapter-1,Integer.MAX_VALUE);return;}
         if(pageIndex>0){pageIndex--;showPage();return;}
         if(chapter>0){int prior=chapter-1;loadChapter(prior,Integer.MAX_VALUE);
             int count=0;while(endFor(startAt(pageIndex))<chapterText.length()&&count++<15000){int end=endFor(startAt(pageIndex));if(end<=startAt(pageIndex))break;starts.add(end);pageIndex++;}
             showPage();}
     }
-    private void reflow(){int pos=startAt(pageIndex);applyStyle();page.post(()->loadChapter(chapter,pos));}
+    private void reflow(){int pos=showingFullPageArt?0:startAt(pageIndex);applyStyle();page.post(()->loadChapter(chapter,pos));}
     private boolean followLink(MotionEvent ev){
         CharSequence display=page.getText();if(!(display instanceof Spanned))return false;
         Layout layout=page.getLayout();if(layout==null)return false;
@@ -301,8 +402,8 @@ public final class ReaderActivity extends Activity {
     }
     private void menu(){
         new AlertDialog.Builder(this).setTitle("FOLIO · "+record.title)
-            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Underlined quotations","Underline help (5s hold)","Reading styles","Typography & layout","Focus & battery","Return to library"},
-                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:quotationList();break;case 5:showUnderlineHelp();break;case 6:readingStyles();break;case 7:typography();break;case 8:focusMenu();break;case 9:finish();break;default:break;}})
+            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Underlined quotations","How to underline (5-second hold)","Reading styles","Typography & layout","Cover image fitting","Focus & battery","Return to library"},
+                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:quotationList();break;case 5:showUnderlineHelp();break;case 6:readingStyles();break;case 7:typography();break;case 8:coverFitDialog();break;case 9:focusMenu();break;case 10:finish();break;default:break;}})
             .show();
     }
     private void toc(){String[] labels=new String[epub.chapters.size()];for(int i=0;i<labels.length;i++)labels[i]=epub.chapters.get(i).title;
@@ -338,13 +439,13 @@ public final class ReaderActivity extends Activity {
     }
     private void showUnderlineHelp(){
         new AlertDialog.Builder(this).setTitle("Underline quotations")
-            .setMessage("Hold your finger still on a passage for FIVE full seconds. A quotation picker opens. Select exact words or tap Nearest sentence.\n\nQuick taps on the left or right turn pages; the center opens the menu.")
+            .setMessage("Hold a finger still on the passage for five full seconds. A quotation panel opens; select your exact words or tap Nearest sentence.\n\nA quick tap on the left or right still turns pages; a tap in the center opens the reading menu.")
             .setPositiveButton("Got it",null).show();
     }
     private void quotationList(){
         final ArrayList<BookStore.Quote> quotes=db.underlines(record.id,-1);
         if(quotes.isEmpty()){new AlertDialog.Builder(this).setTitle("Underlined quotations")
-            .setMessage("To underline, hold a passage for five seconds. A separate quotation picker opens. Ordinary taps turn pages.")
+            .setMessage("To underline without interrupting page turns, hold a passage for five seconds. A separate quotation picker then opens. Short taps always navigate.")
             .setPositiveButton("OK",null).show();return;}
         String[] labels=new String[quotes.size()];
         for(int i=0;i<quotes.size();i++){
@@ -377,6 +478,16 @@ public final class ReaderActivity extends Activity {
                 else {fontKey="sys:serif";fontSp=21;lineSpacing=1.25f;indentDp=22;paragraphGapDp=3;marginDp=19;boldText=false;typeScaleX=0.99f;}
                 saveTypography();reflow();
                 Toast.makeText(this,"Reading style applied",Toast.LENGTH_SHORT).show();
+            }).setNegativeButton("Cancel",null).show();
+    }
+    private void coverFitDialog(){
+        final String[] choices={"Fit entire cover (no cropping)","Fill the screen (crop edges)"};
+        new AlertDialog.Builder(this).setTitle("Cover / full-page images")
+            .setSingleChoiceItems(choices,cropCover?1:0,(dialog,n)->{
+                cropCover=n==1;
+                prefs.edit().putBoolean("cover_crop",cropCover).apply();
+                if(showingFullPageArt){coverView.setScaleType(cropCover?ImageView.ScaleType.CENTER_CROP:ImageView.ScaleType.FIT_CENTER);}
+                dialog.dismiss();
             }).setNegativeButton("Cancel",null).show();
     }
     private void focusMenu(){
@@ -414,7 +525,7 @@ public final class ReaderActivity extends Activity {
         final SeekBar margins=slider(controls,"Page margins",4,40,marginDp,"dp");
         final CheckBox foot=new CheckBox(this);foot.setText("Show chapter / page footer");foot.setChecked(footerVisible);
         controls.addView(foot);
-        TextView note=Ui.text(this,"EPUB publisher styles may differ. Full justified alignment isn't available in Android 4.4's native text layout.",12,false);
+        TextView note=Ui.text(this,"Reader-fit reflow automatically adapts paragraphs and inline illustrations to your available E Ink screen space. Cover pages can be changed separately with Cover image fitting.",12,false);
         note.setTextColor(Ui.GRAY);note.setPadding(0,Ui.dp(this,10),0,Ui.dp(this,10));controls.addView(note);
         new AlertDialog.Builder(this).setTitle("FOLIO · Type & spacing").setView(scroller)
             .setNegativeButton("Cancel",null)
@@ -469,5 +580,5 @@ public final class ReaderActivity extends Activity {
     }
     @Override public void onBackPressed(){if(!jumpHistory.isEmpty()){int[] p=jumpHistory.pop();loadChapter(p[0],p[1]);return;}super.onBackPressed();}
     @Override protected void onPause(){cancelHold();touchActive=false;if(started && chapterText!=null && record!=null)persist(startAt(pageIndex));super.onPause();}
-    @Override protected void onDestroy(){cancelHold();try{if(epub!=null)epub.close();}catch(IOException ignored){}if(db!=null)db.close();super.onDestroy();}
+    @Override protected void onDestroy(){cancelHold();leaveFullPageImage();try{if(epub!=null)epub.close();}catch(IOException ignored){}if(db!=null)db.close();super.onDestroy();}
 }

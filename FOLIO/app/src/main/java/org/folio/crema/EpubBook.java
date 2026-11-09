@@ -3,6 +3,7 @@ package org.folio.crema;
 import java.io.*;
 import java.security.MessageDigest;
 import java.util.*;
+import java.util.regex.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -120,6 +121,37 @@ public final class EpubBook implements Closeable {
         if(textFile)return txt;
         if(index<0||index>=chapters.size())throw new IOException("Invalid chapter");
         return read(chapters.get(index).path,12*1024*1024);
+    }
+    /** Detect image-only spine entries, including common SVG-wrapped EPUB covers. */
+    public String fullPageImagePath(int index,String markup){
+        if(textFile||markup==null||index<0||index>=chapters.size())return null;
+        String file=chapters.get(index).path;
+        // Remove script/styles, XML prolog and SVG tags when measuring visible text.
+        String body=markup.replaceAll("(?is)<script\\b[^>]*>.*?</script>","")
+            .replaceAll("(?is)<style\\b[^>]*>.*?</style>","");
+        Matcher bm=Pattern.compile("(?is)<body\\b[^>]*>(.*?)</body>").matcher(body);
+        if(bm.find())body=bm.group(1);
+        Pattern images=Pattern.compile("(?is)<(?:img|image)\\b[^>]*?\\b(?:src|(?:xlink:)?href)\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>");
+        Matcher m=images.matcher(body);String ref=null;int count=0;
+        while(m.find()){count++;if(count==1)ref=m.group(1);if(count>1)return null;}
+        // Some EPUB2 covers use <image xlink:href=...> in a standalone SVG.
+        if(ref==null){
+            if(file.toLowerCase(Locale.US).contains("cover")&&!metadata.coverPath.isEmpty())return metadata.coverPath;
+            return null;
+        }
+        String text=body.replaceAll("(?is)<(?:img|image)\\b[^>]*>"," ")
+            .replaceAll("(?is)<[^>]+>"," ")
+            .replace("&nbsp;"," ").replace("&#160;"," ").replace("&amp;","&").trim();
+        boolean namedCover=file.toLowerCase(Locale.US).matches(".*(?:cover|titlepage|frontispiece).*?");
+        if(text.length()>(namedCover?120:24))return null;
+        String resolved=resolve(parent(file),ref);
+        if(resolved.isEmpty() || !zipHasImage(resolved))return null;
+        return resolved;
+    }
+    private boolean zipHasImage(String path){
+        String p=stripFragment(path).toLowerCase(Locale.US);
+        if(!(p.endsWith(".jpg")||p.endsWith(".jpeg")||p.endsWith(".png")||p.endsWith(".webp")||p.endsWith(".gif")))return false;
+        return zip.getEntry(stripFragment(path))!=null;
     }
     public byte[] asset(String path,int limit) throws IOException {
         if(textFile)return new byte[0];return readBytes(path,limit);
