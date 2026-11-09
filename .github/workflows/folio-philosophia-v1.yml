@@ -1,0 +1,90 @@
+name: FOLIO Philosophia 1.0 - Crema Grande APK
+on:
+  push:
+    branches: [folio-philosophia-v1]
+    paths:
+      - 'FOLIO/**'
+      - '.github/workflows/folio-philosophia-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 80
+    steps:
+      - name: Checkout FOLIO source
+        uses: actions/checkout@v4
+      - name: Download the actual PHILOSOPHIA GRAND SQLite dictionary
+        uses: actions/download-artifact@v4
+        with:
+          name: PHILOSOPHIA-Million-Sense-SQLite
+          run-id: 42422307149
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dictionary-source
+      - name: Verify 1.79M dictionary records, compress and embed into APK
+        run: |
+          python3 FOLIO/tools/verify_pack.py dictionary-source/philosophia.sqlite FOLIO/app/src/main/assets/philosophia.lexpack
+      - name: Fetch 58 genuinely different licensed reading fonts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 FOLIO/tools/fetch_fonts.py
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configure Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Install Android 33 SDK
+        run: sdkmanager 'platforms;android-33' 'build-tools;33.0.2'
+      - name: Configure Gradle 7.6
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '7.6'
+      - name: Compile and sign KitKat compatible APK
+        run: gradle --no-daemon -p FOLIO assembleDebug
+      - name: Verify Android APK contents, data and icon
+        run: |
+          python3 - <<'PY'
+          import glob, zipfile, subprocess, os
+          apk='FOLIO/app/build/outputs/apk/debug/app-debug.apk'
+          assert os.path.exists(apk)
+          with zipfile.ZipFile(apk) as z:
+            names=z.namelist()
+            required=['AndroidManifest.xml','classes.dex','assets/philosophia.lexpack',
+                      'assets/font_catalog.tsv','META-INF/CERT.RSA']
+            assert all(n in names for n in required),[n for n in required if n not in names]
+            fonts=[n for n in names if n.startswith('assets/fonts/') and n.endswith('.ttf')]
+            license_files=[n for n in names if n.startswith('assets/font_licenses/')]
+            assert len(fonts)>=55,(len(fonts),fonts)
+            assert len(license_files)>=55,len(license_files)
+            assert z.getinfo('assets/philosophia.lexpack').file_size>50000000
+            assert any(n.endswith('/folio_icon.png') for n in names)
+            assert z.testzip() is None
+            print('APK fonts:',len(fonts),'licenses:',len(license_files),'bundled dictionary:',z.getinfo('assets/philosophia.lexpack').file_size)
+          aapt=os.path.join(os.environ['ANDROID_HOME'],'build-tools','33.0.2','aapt')
+          badge=subprocess.check_output([aapt,'dump','badging',apk],text=True)
+          assert "sdkVersion:'19'" in badge,badge
+          assert "org.folio.crema.philosophia" in badge,badge
+          print('FOLIO PHILOSOPHIA VERSION 1.0 VERIFIED',os.path.getsize(apk),'bytes')
+          PY
+      - name: Publish GitHub Actions install package
+        uses: actions/upload-artifact@v4
+        with:
+          name: FOLIO-Philosophia-v1.0-Android-4.4-APK
+          path: FOLIO/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Publish stable GitHub Release APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp FOLIO/app/build/outputs/apk/debug/app-debug.apk FOLIO-Philosophia-v1.0-Crema-Android4.4.apk
+          gh release create folio-philosophia-v1.0 ./FOLIO-Philosophia-v1.0-Crema-Android4.4.apk \
+            --repo "$GITHUB_REPOSITORY" --target folio-philosophia-v1 \
+            --title 'FOLIO Philosophia 1.0 - Crema Grande Offline Reader' \
+            --notes 'KitKat-compatible standalone e-reader + PHILOSOPHIA GRAND offline lexicon: 1,793,921 real definition records, 1,356,788 language-headword pairs, 55+ bundled licensed fonts, custom FOLIO book-and-phi icon, bookshelf, native EPUB/TXT reflow and quotation underlining. Requires ~425MB free device internal storage for first dictionary use. PDF not supported. Debug-signed; install alongside older FOLIO releases.'
+        continue-on-error: true

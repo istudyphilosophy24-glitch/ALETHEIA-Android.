@@ -51,7 +51,7 @@ public final class ReaderActivity extends Activity {
     private final ArrayDeque<int[]> jumpHistory=new ArrayDeque<>();
 
     @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        db=new BookStore(this);String id=getIntent().getStringExtra("bookId");record=db.byId(id==null?"":id);
+        FontCatalog.initialize(this);db=new BookStore(this);String id=getIntent().getStringExtra("bookId");record=db.byId(id==null?"":id);
         if(record==null){finish();return;}
         prefs=getSharedPreferences("reader",MODE_PRIVATE);fontSp=prefs.getInt("font",21);marginDp=prefs.getInt("margin",20);
         lineSpacing=prefs.getFloat("spacing",1.3f);footerVisible=prefs.getBoolean("footer",true);
@@ -175,6 +175,22 @@ public final class ReaderActivity extends Activity {
         instruction.setPadding(pad,pad,pad,pad);instruction.setTextColor(Color.DKGRAY);
         panel.addView(instruction);
         panel.addView(scroll,new LinearLayout.LayoutParams(-1,Ui.dp(this,300)));
+        TextView define=Ui.action(this,"LOOK UP SELECTED WORD IN PHILOSOPHIA");
+        panel.addView(define);
+        define.setOnClickListener(v->{
+            int start=selectionView.getSelectionStart(),end=selectionView.getSelectionEnd();
+            String term="";
+            if(start>=0 && end>start && end<=selectionView.length())term=selectionView.getText().subSequence(start,end).toString().trim();
+            if(term.isEmpty()){
+                int i=Math.min(visible.length()-1,Math.max(0,nearby));String candidate=visible.toString();
+                int left=i,right=i;
+                while(left>0 && (Character.isLetter(candidate.charAt(left-1))||candidate.charAt(left-1)=='-'))left--;
+                while(right<candidate.length() && (Character.isLetter(candidate.charAt(right))||candidate.charAt(right)=='-'))right++;
+                if(right>left)term=candidate.substring(left,right);
+            }
+            if(term.length()>100)term=term.substring(0,100);
+            dictionaryLookup(term);
+        });
         final AlertDialog dialog=new AlertDialog.Builder(this)
             .setTitle("Quotation selection")
             .setView(panel)
@@ -402,9 +418,12 @@ public final class ReaderActivity extends Activity {
     }
     private void menu(){
         new AlertDialog.Builder(this).setTitle("FOLIO · "+record.title)
-            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Underlined quotations","How to underline (5-second hold)","Reading styles","Typography & layout","Cover image fitting","Focus & battery","Return to library"},
-                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:quotationList();break;case 5:showUnderlineHelp();break;case 6:readingStyles();break;case 7:typography();break;case 8:coverFitDialog();break;case 9:focusMenu();break;case 10:finish();break;default:break;}})
+            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Underlined quotations","Dictionary lookup","How to underline (5-second hold)","Reading styles","Typography & layout","Cover image fitting","Focus & battery","Return to library"},
+                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:quotationList();break;case 5:dictionaryLookup("");break;case 6:showUnderlineHelp();break;case 7:readingStyles();break;case 8:typography();break;case 9:coverFitDialog();break;case 10:focusMenu();break;case 11:finish();break;default:break;}})
             .show();
+    }
+    private void dictionaryLookup(String word){
+        Intent intent=new Intent(this,DictionaryActivity.class);intent.putExtra("query",word);startActivity(intent);
     }
     private void toc(){String[] labels=new String[epub.chapters.size()];for(int i=0;i<labels.length;i++)labels[i]=epub.chapters.get(i).title;
         new AlertDialog.Builder(this).setTitle("Table of contents").setItems(labels,(d,i)->loadChapter(i,0)).setNegativeButton("Close",null).show();}
@@ -473,9 +492,9 @@ public final class ReaderActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("FOLIO Reading Styles")
             .setItems(names,(d,index)->{
                 if(index==3){typography();return;}
-                if(index==0){fontKey="sys:sans-serif";fontSp=25;lineSpacing=1.48f;indentDp=0;paragraphGapDp=12;marginDp=17;boldText=true;typeScaleX=1.05f;}
-                else if(index==1){fontKey="sys:serif";fontSp=22;lineSpacing=1.38f;indentDp=16;paragraphGapDp=7;marginDp=21;boldText=false;typeScaleX=1.02f;}
-                else {fontKey="sys:serif";fontSp=21;lineSpacing=1.25f;indentDp=22;paragraphGapDp=3;marginDp=19;boldText=false;typeScaleX=0.99f;}
+                if(index==0){fontKey="asset:atkinsonhyperlegible";fontSp=25;lineSpacing=1.48f;indentDp=0;paragraphGapDp=12;marginDp=17;boldText=true;typeScaleX=1.05f;}
+                else if(index==1){fontKey="asset:gentiumbookplus";fontSp=22;lineSpacing=1.38f;indentDp=16;paragraphGapDp=7;marginDp=21;boldText=false;typeScaleX=1.02f;}
+                else {fontKey="asset:literata";fontSp=21;lineSpacing=1.25f;indentDp=22;paragraphGapDp=3;marginDp=19;boldText=false;typeScaleX=0.99f;}
                 saveTypography();reflow();
                 Toast.makeText(this,"Reading style applied",Toast.LENGTH_SHORT).show();
             }).setNegativeButton("Cancel",null).show();

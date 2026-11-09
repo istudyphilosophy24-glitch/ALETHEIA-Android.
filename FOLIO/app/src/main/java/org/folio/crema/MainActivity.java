@@ -28,7 +28,7 @@ public final class MainActivity extends Activity {
         @Override protected int sizeOf(String key,Bitmap bitmap){return Math.max(1,bitmap.getByteCount()/1024);}
     };
     @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        db=new BookStore(this);gridMode=getPreferences(MODE_PRIVATE).getBoolean("shelf_grid",true);makeScreen();
+        FontCatalog.initialize(this);db=new BookStore(this);gridMode=getPreferences(MODE_PRIVATE).getBoolean("shelf_grid",true);makeScreen();
         Intent intent=getIntent();if(Intent.ACTION_VIEW.equals(intent.getAction())&&intent.getData()!=null)importUri(intent.getData());
     }
     @Override protected void onResume(){super.onResume();reload();}
@@ -42,7 +42,9 @@ public final class MainActivity extends Activity {
         TextView resume=Ui.action(this,"Continue");resume.setOnClickListener(v->{
             for(BookStore.Book b:allBooks){if(b.opened>0){open(b);return;}}
             if(!allBooks.isEmpty())open(allBooks.get(0));else toast("Import a book first");
-        });toolbar.addView(resume);root.addView(toolbar);
+        });toolbar.addView(resume);
+        TextView dictionary=Ui.action(this,"Dict");dictionary.setOnClickListener(v->startActivity(new Intent(this,DictionaryActivity.class)));
+        toolbar.addView(dictionary);root.addView(toolbar);
         LinearLayout sub=Ui.row(this);sub.setGravity(Gravity.CENTER_VERTICAL);
         summary=Ui.text(this,"YOUR BOOKSHELF",12,false);summary.setTextColor(Ui.GRAY);
         sub.addView(summary,new LinearLayout.LayoutParams(0,Ui.dp(this,35),1));

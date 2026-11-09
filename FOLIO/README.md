@@ -1,17 +1,13 @@
-# FOLIO v0.9 — Reader-Fit Edition
+# FOLIO v1.0 — Philosophia Edition
 
-Android 4.4 compatible, offline E Ink EPUB/TXT reading application.
+Native Android 4.4 (API 19) Crema Grande reader with shelf, EPUB/TXT, full-screen covers, permanent underlines, 5-second quotation selection, integrated **verified** PHILOSOPHIA GRAND offline dictionary, and 55+ distinct open-license typeface assets retrieved and packaged at build time. No network permission on the device.
 
-### Changes from v0.8
-- EPUB **full-page embedded covers** (including SVG-wrapped `<image>`) now display in a dedicated white image pane instead of a small inline text line.
-- Cover display defaults to **Fit entire image** with no clipping, and optional **Fill / crop** in the reading menu.
-- Inline EPUB illustrations scale to the available viewport rather than a fixed 450dp height.
-- Paragraphs and image layout reflow after typography or viewport changes; reading position is preserved by text anchor.
-- HTML5 semantic block tags are converted to Android 4.4-friendly tags.
-- Five-second quotation hold and normal-tap navigation remain intact.
+## Full dictionary facts
 
-### Important limitations
-- PDF is **not** currently supported by this APK. PDFs are fixed-page documents; fit-to-page requires a separate native PDF engine, and true text reflow requires reliable source text/tags or conversion. This version does not pretend to support PDFs.
-- Some EPUB CSS, tables, SVG vector art and fixed-layout books exceed Android 4.4's native text renderer capabilities. We prioritize readable reflowable EPUB 2 and ordinary EPUB 3.
-- v0.9 is a separate package because GitHub's debug signing identity is not stable across runs. Your older app and data remain untouched. Reimport books into v0.9.
-- On-device visual validation and battery measurements are still required.
+1,793,921 **definition/sense rows**, and 1,356,788 distinct **language+headword** combinations; do not mistake these for 1.5 million unique English words. The single APK embeds a compressed SQLite pack; the user needs approximately 425 MB of free storage **after installation** for first-use expansion. Dictionary init starts when opening Dictionary or selecting Look up from a reading quotation dialog, not on every launch.
+
+## Build
+
+Build on the folio-philosophia-v1 branch via `.github/workflows/folio-philosophia-v1.yml`. It downloads the verified SQLite artifact from earlier PHILOSOPHIA data workflow run 42422307149, verifies size/count/integrity, downloads and licenses at least 55 genuine fonts from Google Fonts, and creates a legacy-signed KitKat APK. If any minimum count or validation fails, the build fails; there is no fake fallback.
+
+All Google Fonts assets are downloaded at build time; font family licenses are embedded. Current FOLIO v0.9 installation is retained under a distinct Android application ID. PDF rendering is still NOT included.

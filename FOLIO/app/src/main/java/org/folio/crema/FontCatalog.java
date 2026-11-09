@@ -22,8 +22,24 @@ final class FontCatalog {
         new Entry("sys:casual","Casual")
     };
     private FontCatalog(){}
+    private static Context appContext;
+    private static final Map<String,Typeface> fontCache=new LinkedHashMap<String,Typeface>();
+    static void initialize(Context c){appContext=c.getApplicationContext();}
+    private static void addBundled(Context c,ArrayList<Entry> list){
+        try(BufferedReader reader=new BufferedReader(new InputStreamReader(c.getAssets().open("font_catalog.tsv"),"UTF-8"))){
+            String row;
+            while((row=reader.readLine())!=null){
+                String[] parts=row.split("\t");
+                if(parts.length>=2 && parts[0].matches("[a-z0-9]+")){
+                    list.add(new Entry("asset:"+parts[0],"Book Font · "+parts[1]+" ("+parts[0]+")"));
+                }
+            }
+        }catch(Exception e){android.util.Log.w("FOLIO","Font catalog unavailable",e);}
+    }
+
     static ArrayList<Entry> list(Context c){
         ArrayList<Entry> items=new ArrayList<Entry>(Arrays.asList(BUILTINS));
+        addBundled(c,items);
         File[] files=folder(c).listFiles();
         if(files!=null){Arrays.sort(files,new Comparator<File>(){public int compare(File a,File b){return a.getName().compareToIgnoreCase(b.getName());}});
             for(File f:files){if(f.isFile()&&isFont(f.getName()))items.add(new Entry("file:"+f.getAbsolutePath(),"Custom · "+name(f.getName())));}
@@ -32,6 +48,17 @@ final class FontCatalog {
     }
     static Typeface load(String key,int weight){
         try {
+            if(key!=null&&key.startsWith("asset:")){
+                synchronized(fontCache){
+                    Typeface face=fontCache.get(key);
+                    if(face==null && appContext!=null){
+                        face=Typeface.createFromAsset(appContext.getAssets(),"fonts/"+key.substring(6)+".ttf");
+                        if(fontCache.size()>=6)fontCache.clear();
+                        fontCache.put(key,face);
+                    }
+                    return face==null?Typeface.create("serif",weight):Typeface.create(face,weight);
+                }
+            }
             if(key!=null&&key.startsWith("file:"))return Typeface.create(Typeface.createFromFile(key.substring(5)),weight);
             String family=(key!=null&&key.startsWith("sys:"))?key.substring(4):"serif";
             return Typeface.create(family,weight);
