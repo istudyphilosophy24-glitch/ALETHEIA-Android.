@@ -25,10 +25,15 @@ public final class ReaderActivity extends Activity {
     private CharSequence chapterText="";
     private final ArrayList<Integer> starts=new ArrayList<>();
     private static final int PICK_FONT=207;
+    private static final int MENU_UNDERLINE=8101;
+    private static final int MENU_REMOVE_UNDERLINE=8102;
+    private int visiblePageStart=0;
+    private boolean focusReading=true;
     private int chapter=0,pageIndex=0,fontSp=21,marginDp=20,indentDp=14,paragraphGapDp=7;
     private float lineSpacing=1.3f;
     private String fontKey="sys:serif";
     private boolean footerVisible=true,boldText=false,loading=false;
+    private float typeScaleX=1.0f;
     private android.content.SharedPreferences prefs;
     private boolean started=false;
     private int layoutWidth,layoutHeight;
@@ -41,14 +46,40 @@ public final class ReaderActivity extends Activity {
         lineSpacing=prefs.getFloat("spacing",1.3f);footerVisible=prefs.getBoolean("footer",true);
         indentDp=prefs.getInt("indent",14);paragraphGapDp=prefs.getInt("paragraph_gap",7);
         fontKey=prefs.getString("font_key",prefs.getBoolean("serif",true)?"sys:serif":"sys:sans-serif");
-        boldText=prefs.getBoolean("font_bold",false);
+        boldText=prefs.getBoolean("font_bold",false);typeScaleX=prefs.getFloat("font_width",1.0f);
         try{epub=new EpubBook(new File(record.path));}catch(Exception ex){error("Cannot open this book",ex.getMessage());return;}
         root=Ui.column(this);page=new TextView(this);page.setTextColor(Color.BLACK);page.setBackgroundColor(Color.WHITE);
-        page.setGravity(Gravity.TOP|Gravity.LEFT);page.setIncludeFontPadding(false);page.setTextIsSelectable(false);
-        page.setOnTouchListener((v,e)->{if(e.getAction()!=MotionEvent.ACTION_UP)return true;
-            if(followLink(e))return true;
-            float x=e.getX();int width=page.getWidth();
-            if(x<width*.32f)previous();else if(x>width*.68f)next();else menu();return true;
+        page.setGravity(Gravity.TOP|Gravity.LEFT);page.setIncludeFontPadding(false);page.setTextIsSelectable(true);
+        page.setCustomSelectionActionModeCallback(new ActionMode.Callback(){
+            public boolean onCreateActionMode(ActionMode mode,Menu menu){
+                menu.add(0,MENU_UNDERLINE,0,"Underline").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                menu.add(0,MENU_REMOVE_UNDERLINE,1,"Remove underline").setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+                return true;
+            }
+            public boolean onPrepareActionMode(ActionMode mode,Menu menu){return false;}
+            public boolean onActionItemClicked(ActionMode mode,MenuItem item){
+                int id=item.getItemId();if(id!=MENU_UNDERLINE&&id!=MENU_REMOVE_UNDERLINE)return false;
+                int begin=page.getSelectionStart(),end=page.getSelectionEnd();
+                mode.finish();
+                if(begin>=0&&end>begin){annotate(visiblePageStart+begin,visiblePageStart+end,id==MENU_UNDERLINE);}
+                else Toast.makeText(ReaderActivity.this,"Long-press text and drag to select a quotation",Toast.LENGTH_LONG).show();
+                return true;
+            }
+            public void onDestroyActionMode(ActionMode mode){}
+        });
+        // Let TextView handle long-press selection; intercept only short, motionless taps.
+        page.setOnTouchListener(new View.OnTouchListener(){
+            private float downX,downY;private long downAt;
+            @Override public boolean onTouch(View v,MotionEvent e){
+                if(e.getAction()==MotionEvent.ACTION_DOWN){downX=e.getX();downY=e.getY();downAt=SystemClock.uptimeMillis();return false;}
+                if(e.getAction()!=MotionEvent.ACTION_UP)return false;
+                if(SystemClock.uptimeMillis()-downAt>300 || Math.abs(e.getX()-downX)>Ui.dp(ReaderActivity.this,11)
+                    || Math.abs(e.getY()-downY)>Ui.dp(ReaderActivity.this,11))return false;
+                if((page.getSelectionStart()>=0 && page.getSelectionEnd()>page.getSelectionStart()))return false;
+                if(followLink(e))return true;
+                int width=page.getWidth();if(e.getX()<width*.30f)previous();else if(e.getX()>width*.70f)next();else menu();
+                return true;
+            }
         });
         root.addView(page,new LinearLayout.LayoutParams(-1,0,1));
         footer=Ui.text(this,"",11,false);footer.setTextColor(Color.DKGRAY);footer.setGravity(Gravity.CENTER);
@@ -61,7 +92,7 @@ public final class ReaderActivity extends Activity {
         });
     }
     private void applyStyle(){
-        page.setTypeface(FontCatalog.load(fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));
+        page.setTypeface(FontCatalog.load(this,fontKey,boldText?Typeface.BOLD:Typeface.NORMAL));page.setTextScaleX(typeScaleX);
         page.setTextSize(TypedValue.COMPLEX_UNIT_SP,fontSp);page.setLineSpacing(0,lineSpacing);
         int m=Ui.dp(this,marginDp);page.setPadding(m,Ui.dp(this,marginDp),m,Ui.dp(this,marginDp));
         footer.setVisibility(footerVisible?View.VISIBLE:View.GONE);
@@ -75,6 +106,7 @@ public final class ReaderActivity extends Activity {
             String markup=epub.chapter(chapter);
             CharSequence original=record.format.equals("txt")?markup.replace("\r\n","\n"):renderHtml(markup);
             chapterText=TextLayoutStyler.style(original,Ui.dp(this,indentDp),Ui.dp(this,paragraphGapDp),record.format.equals("txt"));
+            refreshUnderlineSpans();
             starts.clear();starts.add(0);pageIndex=0;
             layoutWidth=page.getWidth()-page.getPaddingLeft()-page.getPaddingRight();
             layoutHeight=page.getHeight()-page.getPaddingTop()-page.getPaddingBottom();
@@ -139,8 +171,11 @@ public final class ReaderActivity extends Activity {
     private void showPage(){
         if(page==null || chapterText==null)return;
         int begin=startAt(pageIndex);int end=endFor(begin);
+        visiblePageStart=begin;
         page.setText(chapterText.subSequence(begin,Math.max(begin,end)),TextView.BufferType.SPANNABLE);
-        String caption=epub.chapters.get(chapter).title+"  ·  "+(pageIndex+1)+"  ·  "+(chapter+1)+"/"+epub.chapters.size();
+        float fraction=chapterText.length()==0?0f:(float)begin/(float)chapterText.length();
+        float complete=100f*(chapter+fraction)/Math.max(1,epub.chapters.size());
+        String caption=epub.chapters.get(chapter).title+"  ·  "+(pageIndex+1)+"  ·  "+String.format(Locale.US,"%.1f%%",complete);
         footer.setText(caption);persist(begin);
     }
     private void persist(int offset){if(record!=null)db.position(record.id,chapter,Math.max(0,offset));}
@@ -172,8 +207,8 @@ public final class ReaderActivity extends Activity {
     }
     private void menu(){
         new AlertDialog.Builder(this).setTitle("FOLIO · "+record.title)
-            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Typography & layout","Return to library"},
-                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:typography();break;case 5:finish();break;default:break;}})
+            .setItems(new String[]{"Continue reading","Table of contents","Add bookmark","My bookmarks","Underlined quotations","Underline a sentence","Reading styles","Typography & layout","Focus & battery","Return to library"},
+                (d,w)->{switch(w){case 1:toc();break;case 2:mark();break;case 3:marks();break;case 4:quotationList();break;case 5:underlineSentence();break;case 6:readingStyles();break;case 7:typography();break;case 8:focusMenu();break;case 9:finish();break;default:break;}})
             .show();
     }
     private void toc(){String[] labels=new String[epub.chapters.size()];for(int i=0;i<labels.length;i++)labels[i]=epub.chapters.get(i).title;
@@ -183,6 +218,98 @@ public final class ReaderActivity extends Activity {
     private void marks(){ArrayList<BookStore.Mark> list=db.marks(record.id);if(list.isEmpty()){new AlertDialog.Builder(this).setMessage("No bookmarks yet.").setPositiveButton("OK",null).show();return;}
         String[] titles=new String[list.size()];for(int i=0;i<list.size();i++)titles[i]=list.get(i).label;
         new AlertDialog.Builder(this).setTitle("Bookmarks").setItems(titles,(d,i)->loadChapter(list.get(i).chapter,list.get(i).offset)).setNegativeButton("Close",null).show();}
+    private static final class FolioUnderlineSpan extends UnderlineSpan { }
+    /** Persistent source-offset underlines, independent of visual page breaks. */
+    private void annotate(int from,int to,boolean add){
+        if(chapterText==null||from<0||to<=from||to>chapterText.length())return;
+        if(add){String quote=chapterText.subSequence(from,to).toString().trim();
+            if(quote.isEmpty())return;
+            db.addUnderline(record.id,chapter,from,to,quote);
+            Toast.makeText(this,"Quotation underlined",Toast.LENGTH_SHORT).show();
+        }else{
+            int count=db.removeUnderlinesTouching(record.id,chapter,from,to);
+            Toast.makeText(this,count>0?"Underline removed":"No underline in selection",Toast.LENGTH_SHORT).show();
+        }
+        refreshUnderlineSpans();showPage();
+    }
+    private void refreshUnderlineSpans(){
+        if(!(chapterText instanceof Spannable))return;
+        Spannable sp=(Spannable)chapterText;
+        FolioUnderlineSpan[] old=sp.getSpans(0,sp.length(),FolioUnderlineSpan.class);
+        for(FolioUnderlineSpan u:old)sp.removeSpan(u);
+        for(BookStore.Quote q:db.underlines(record.id,chapter)){
+            int a=Math.max(0,Math.min(sp.length(),q.start));int b=Math.max(a,Math.min(sp.length(),q.end));
+            if(b>a)sp.setSpan(new FolioUnderlineSpan(),a,b,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+    }
+    /** Backup for e-ink touchscreens where dragging a text selection is awkward. */
+    private void underlineSentence(){
+        int first=startAt(pageIndex),last=endFor(first);
+        String text=chapterText.subSequence(first,last).toString();
+        final ArrayList<int[]> ranges=new ArrayList<int[]>();
+        final ArrayList<String> snippets=new ArrayList<String>();
+        java.util.regex.Matcher m=Pattern.compile("[^.!?\\n]+(?:[.!?]+|$)").matcher(text);
+        while(m.find()&&ranges.size()<20){int a=m.start(),b=m.end();
+            while(a<b&&Character.isWhitespace(text.charAt(a)))a++;
+            while(b>a&&Character.isWhitespace(text.charAt(b-1)))b--;
+            if(b-a<8)continue;
+            ranges.add(new int[]{first+a,first+b});
+            String sample=text.substring(a,b).replace('\n',' ').trim();
+            snippets.add(sample.length()>130?sample.substring(0,127)+"…":sample);
+        }
+        if(snippets.isEmpty()){Toast.makeText(this,"No complete sentence on this page",Toast.LENGTH_LONG).show();return;}
+        new AlertDialog.Builder(this).setTitle("Underline a sentence")
+            .setItems(snippets.toArray(new String[0]),(d,idx)->{
+                int[] r=ranges.get(idx);annotate(r[0],r[1],true);
+            }).setNegativeButton("Cancel",null).show();
+    }
+    private void quotationList(){
+        final ArrayList<BookStore.Quote> quotes=db.underlines(record.id,-1);
+        if(quotes.isEmpty()){new AlertDialog.Builder(this).setTitle("Underlined quotations")
+            .setMessage("To underline: long-press a passage, adjust the handles, and tap Underline. Or choose Underline a sentence from the reading menu.")
+            .setPositiveButton("OK",null).show();return;}
+        String[] labels=new String[quotes.size()];
+        for(int i=0;i<quotes.size();i++){
+            BookStore.Quote q=quotes.get(i);String t=q.quote.replace('\n',' ').trim();
+            labels[i]="§"+(q.chapter+1)+" · "+(t.length()>105?t.substring(0,102)+"…":t);
+        }
+        new AlertDialog.Builder(this).setTitle("My quotations · "+quotes.size())
+            .setItems(labels,(d,index)->{final BookStore.Quote q=quotes.get(index);
+                new AlertDialog.Builder(this).setTitle("Underlined passage").setMessage(q.quote)
+                    .setPositiveButton("Go to",(di,w)->loadChapter(q.chapter,q.start))
+                    .setNeutralButton("Copy",(di,w)->{
+                        android.content.ClipboardManager clip=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                        if(clip!=null)clip.setPrimaryClip(ClipData.newPlainText("FOLIO quote",q.quote));
+                    })
+                    .setNegativeButton("Remove underline",(di,w)->{db.removeUnderline(q.id);if(chapter==q.chapter){refreshUnderlineSpans();showPage();}}).show();
+            }).setNeutralButton("Export",(d,w)->{
+                StringBuilder all=new StringBuilder(record.title+" — Quotations\n\n");
+                for(BookStore.Quote q:quotes)all.append("Chapter ").append(q.chapter+1).append("\n").append(q.quote).append("\n\n");
+                Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");send.putExtra(Intent.EXTRA_TEXT,all.toString());
+                startActivity(Intent.createChooser(send,"Export quotations"));
+            }).setNegativeButton("Close",null).show();
+    }
+    private void readingStyles(){
+        final String[] names={"FOLIO Clarity · large, generous spacing","FOLIO Logos · philosophy and Greek","FOLIO Novel · traditional typesetting","Current custom settings"};
+        new AlertDialog.Builder(this).setTitle("FOLIO Reading Styles")
+            .setItems(names,(d,index)->{
+                if(index==3){typography();return;}
+                if(index==0){fontKey="sys:sans-serif";fontSp=25;lineSpacing=1.48f;indentDp=0;paragraphGapDp=12;marginDp=17;boldText=true;typeScaleX=1.05f;}
+                else if(index==1){fontKey="sys:serif";fontSp=22;lineSpacing=1.38f;indentDp=16;paragraphGapDp=7;marginDp=21;boldText=false;typeScaleX=1.02f;}
+                else {fontKey="sys:serif";fontSp=21;lineSpacing=1.25f;indentDp=22;paragraphGapDp=3;marginDp=19;boldText=false;typeScaleX=0.99f;}
+                saveTypography();reflow();
+                Toast.makeText(this,"Reading style applied",Toast.LENGTH_SHORT).show();
+            }).setNegativeButton("Cancel",null).show();
+    }
+    private void focusMenu(){
+        new AlertDialog.Builder(this).setTitle("Focus & battery")
+            .setMessage("FOLIO already uses full-screen mode, no network permission, and no wake locks or background services. Android 4.4 cannot reliably force-stop other apps without privileged access. Automatically killing apps can interfere with the launcher, system services and saved work.\n\nYou can manage running apps manually in Android Settings. Disable Wi-Fi in Quick Settings for additional savings.")
+            .setPositiveButton("Keep reading",null)
+            .setNeutralButton("Manage apps",(d,w)->{
+                try{startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_SETTINGS));}
+                catch(Exception e){Toast.makeText(this,"Open Android Settings manually",Toast.LENGTH_LONG).show();}
+            }).show();
+    }
     /** Full-size, native KitKat-friendly reading controls. Apply once to avoid constant E Ink redraws. */
     private void typography(){
         final ScrollView scroller=new ScrollView(this);
@@ -203,6 +330,7 @@ public final class ReaderActivity extends Activity {
         controls.addView(heavier);
         final SeekBar size=slider(controls,"Font size",14,36,fontSp,"sp");
         final SeekBar lines=slider(controls,"Line spacing",100,190,Math.round(lineSpacing*100f),"%");
+        final SeekBar faceWidth=slider(controls,"Character width",92,110,Math.round(typeScaleX*100f),"%");
         final SeekBar indents=slider(controls,"First-line paragraph indent",0,40,indentDp,"dp");
         final SeekBar paragraph=slider(controls,"Space after paragraphs",0,24,paragraphGapDp,"dp");
         final SeekBar margins=slider(controls,"Page margins",4,40,marginDp,"dp");
@@ -219,7 +347,7 @@ public final class ReaderActivity extends Activity {
                 FontCatalog.Entry selected=(FontCatalog.Entry)fontSelect.getSelectedItem();
                 if(selected!=null)fontKey=selected.key;
                 boldText=heavier.isChecked();fontSp=14+size.getProgress();
-                lineSpacing=(100+lines.getProgress())/100f;
+                lineSpacing=(100+lines.getProgress())/100f;typeScaleX=(92+faceWidth.getProgress())/100f;
                 indentDp=indents.getProgress();paragraphGapDp=paragraph.getProgress();
                 marginDp=4+margins.getProgress();footerVisible=foot.isChecked();
                 saveTypography();reflow();
@@ -242,7 +370,7 @@ public final class ReaderActivity extends Activity {
     private void saveTypography(){
         prefs.edit().putInt("font",fontSp).putInt("margin",marginDp).putFloat("spacing",lineSpacing)
             .putInt("indent",indentDp).putInt("paragraph_gap",paragraphGapDp)
-            .putString("font_key",fontKey).putBoolean("font_bold",boldText)
+            .putString("font_key",fontKey).putBoolean("font_bold",boldText).putFloat("font_width",typeScaleX)
             .putBoolean("footer",footerVisible).apply();
     }
     @Override protected void onActivityResult(int request,int result,Intent data){

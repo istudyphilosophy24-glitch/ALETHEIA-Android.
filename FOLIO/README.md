@@ -1,3 +1,15 @@
+# FOLIO 0.7 — Quotation & Reading Styles Edition
+
+Native offline KitKat (API 19) reader. Installs **alongside** Shelf v0.6 under the package name `org.folio.crema.annotation`, because GitHub-generated debug signing keys are not stable across runs. Your previous app and books are not overwritten. Import books again into the new edition.
+
+## New
+- Long-press text to select a quotation, choose **Underline** in the selection toolbar.
+- Select **Remove underline** for selected text or delete from the quotation library.
+- Quotation list with jump-to-passage, clipboard copy, and text export.
+- Touch-friendly fallback: **Underline a sentence** from reading menu.
+- 3 FOLIO-designed reading **styles**, composed from device system typefaces: **Clarity** (larger accessible sans), **Logos** (scholarly serif), **Novel** (comfortable compact serif). These are typographic profiles, not original font files or original drawn glyphs.
+- Battery & focus guidance; safe shortcut to manage apps manually. Android cannot responsibly guarantee killing all other apps.
+
 # FOLIO — Offline Crema Grande Reader
 
 **Status:** Android 4.4 Shelf Edition / 0.6 source release. **Do not assume untested features are complete.**

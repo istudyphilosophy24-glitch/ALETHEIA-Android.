@@ -38,7 +38,11 @@ public final class MainActivity extends Activity {
         TextView brand=Ui.text(this,"FOLIO",27,true);brand.setTypeface(Typeface.SERIF,Typeface.BOLD);
         toolbar.addView(brand,new LinearLayout.LayoutParams(0,Ui.dp(this,55),1));
         TextView add=Ui.action(this,"+ Import");add.setOnClickListener(v->startActivityForResult(new Intent(this,PickerActivity.class),PICK));
-        toolbar.addView(add);root.addView(toolbar);
+        toolbar.addView(add);
+        TextView resume=Ui.action(this,"Continue");resume.setOnClickListener(v->{
+            for(BookStore.Book b:allBooks){if(b.opened>0){open(b);return;}}
+            if(!allBooks.isEmpty())open(allBooks.get(0));else toast("Import a book first");
+        });toolbar.addView(resume);root.addView(toolbar);
         LinearLayout sub=Ui.row(this);sub.setGravity(Gravity.CENTER_VERTICAL);
         summary=Ui.text(this,"YOUR BOOKSHELF",12,false);summary.setTextColor(Ui.GRAY);
         sub.addView(summary,new LinearLayout.LayoutParams(0,Ui.dp(this,35),1));
